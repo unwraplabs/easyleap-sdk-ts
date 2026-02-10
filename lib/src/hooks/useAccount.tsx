@@ -9,6 +9,7 @@ import { num } from "starknet";
 import { useAccount as useAccountWagmi, useConfig } from "wagmi";
 import { InteractionMode, useSharedState } from "../contexts/SharedState";
 import { useTransactionHistory } from "./useTransactionHistory";
+import { usePrivyContext } from "../contexts/PrivyContext";
 
 export enum Chains {
   ETH_MAINNET = "ETH_MAINNET",
@@ -40,8 +41,14 @@ export const evmConfig = createConfig({
 export function useAccount(): useAccountResult {
   const config = useConfig();
   const { address: addressSource, chainId: chainIdEVM } = useAccountWagmi();
-  const { address: addressDestination, chainId: chainIdSN } = useAccountSn();
+  const { address: addressDestinationSN, chainId: chainIdSN } = useAccountSn();
+  const { privyWallet } = usePrivyContext();
   const sharedState = useSharedState();
+
+  // Prioritize Privy wallet if connected
+  const addressDestination = privyWallet?.address 
+    ? (privyWallet.address as `0x${string}`)
+    : addressDestinationSN;
 
   // init tx history polling
   useTransactionHistory(addressDestination);

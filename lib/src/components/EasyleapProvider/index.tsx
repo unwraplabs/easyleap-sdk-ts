@@ -1,44 +1,60 @@
-import { mainnet, sepolia } from "@starknet-react/chains";
+import { mainnet } from "@starknet-react/chains";
 import {
   publicProvider,
   StarknetConfig,
   StarknetConfigProps,
-  voyager
+  voyager,
 } from "@starknet-react/core";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getDefaultConfig } from "connectkit";
 import React from "react";
-import { sepolia as sepoliaEVM } from "viem/chains";
+import { mainnet as mainnetEVM } from "viem/chains";
 import {
   cookieStorage,
   createConfig,
   createStorage,
   http,
   Config as WagmiConfig,
-  WagmiProvider
+  WagmiProvider,
 } from "wagmi";
+import { PrivyProvider } from "@privy-io/react-auth";
 
 import { Toaster } from "@lib/components/ui/toaster";
 import { SharedStateProvider, useSharedState } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
+import { PrivyContextProvider } from "@lib/contexts/PrivyContext";
 
 export interface EasyleapConfig {
   wagmiConfig?: WagmiConfig;
   starknetConfig?: StarknetConfigProps;
   children?: React.ReactNode;
   theme?: GlobalTheme;
+  queryClient?: QueryClient;
 }
 
 const WALLET_CONNECT_DEFAULT_PROJECT_ID = "242405a2808ac6e90831cb540f36617f"; // akira@unwraplabs.com wallet connect account
+
+// Create a default QueryClient instance for React Query (required by Wagmi v2)
+const defaultQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 export function defaultEasyleapConfig() {
   return {
     wagmiConfig: createConfig(
       getDefaultConfig({
         // Your dApps chains
-        chains: [sepoliaEVM],
+        chains: [mainnetEVM],
         transports: {
           // RPC URL for each chain
-          [sepoliaEVM.id]: http(`https://eth-sepolia.public.blastapi.io`)
+          [mainnetEVM.id]: http(
+            `https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`,
+          ),
         },
 
         // Server Side Rendering
@@ -56,14 +72,14 @@ export function defaultEasyleapConfig() {
         // Optional App Info
         appDescription: "Bridge funds to Starknet dApps in a single click",
         appUrl: "https://easyleap.com", // your app's url
-        appIcon: "https://easyleap.com/logo.png" // your app's icon, no bigger than 1024x1024px (max. 1MB)
-      })
+        appIcon: "https://easyleap.com/logo.png", // your app's icon, no bigger than 1024x1024px (max. 1MB)
+      }),
     ),
     starknetConfig: {
-      chains: [sepolia],
+      chains: [mainnet],
       provider: publicProvider(),
-      explorer: voyager
-    }
+      explorer: voyager,
+    },
   };
 }
 
@@ -72,8 +88,8 @@ export function EasyleapProvider(
     starknetConfig: defaultEasyleapConfig().starknetConfig,
     wagmiConfig: defaultEasyleapConfig().wagmiConfig,
     children: null,
-    theme: {}
-  }
+    theme: {},
+  },
 ) {
   const context = useSharedState();
 
@@ -91,30 +107,65 @@ export function EasyleapProvider(
     return props.starknetConfig;
   }, [props.starknetConfig]);
 
+  const queryClient = React.useMemo(() => {
+    return props.queryClient || defaultQueryClient;
+  }, [props.queryClient]);
+
   React.useEffect(() => {
     // todo need to ensure only one chain can be given
     if (starknetConfig.chains && starknetConfig.chains.length > 0) {
       context.setChains({
-        starknet: starknetConfig.chains[0]
+        starknet: starknetConfig.chains[0],
       });
     }
   }, [starknetConfig.chains]);
 
+  const privyAppId =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""
+      : "";
+
   return (
     <SharedStateProvider>
       <ThemeProvider theme={props.theme}>
-        <WagmiProvider config={wagmiConfig}>
-          <StarknetConfig
-            chains={[sepolia, mainnet]}
-            provider={starknetConfig.provider}
-            explorer={starknetConfig.explorer}
-            connectors={starknetConfig?.connectors || []}
-            autoConnect
-          >
-            {props.children}
-            <Toaster />
-          </StarknetConfig>
-        </WagmiProvider>
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={wagmiConfig}>
+            {privyAppId ? (
+              <PrivyProvider
+                appId={privyAppId}
+                config={{
+                  loginMethods: ["email", "google"],
+                  appearance: {
+                    theme: "light",
+                    showWalletLoginFirst: false,
+                  },
+                }}
+              >
+                <PrivyContextProvider>
+                  <StarknetConfig
+                    chains={starknetConfig.chains || [mainnet]}
+                    provider={starknetConfig.provider}
+                    explorer={starknetConfig.explorer}
+                    connectors={starknetConfig?.connectors || []}
+                  >
+                    {props.children}
+                    <Toaster />
+                  </StarknetConfig>
+                </PrivyContextProvider>
+              </PrivyProvider>
+            ) : (
+              <StarknetConfig
+                chains={starknetConfig.chains || [mainnet]}
+                provider={starknetConfig.provider}
+                explorer={starknetConfig.explorer}
+                connectors={starknetConfig?.connectors || []}
+              >
+                {props.children}
+                <Toaster />
+              </StarknetConfig>
+            )}
+          </WagmiProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </SharedStateProvider>
   );
