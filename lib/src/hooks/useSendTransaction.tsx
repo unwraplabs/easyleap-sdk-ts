@@ -1,5 +1,5 @@
 import { Address, UseSendTransactionProps, UseSendTransactionResult, useSendTransaction as useSendTransactionSN } from "@starknet-react/core";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Call, hash, num } from "starknet";
 import { encodeFunctionData } from "viem";
 import {
@@ -23,6 +23,8 @@ import { SourceBridgeInfo, useSourceBridgeInfo } from "./useSourceBridgeInfo";
 import { useAmountOut } from "./useAmountOut";
 import { toast } from "./use-toast";
 import { logger } from "@lib/utils/logger";
+import { usePrivyContext } from "../contexts/PrivyContext";
+import { usePrivy } from "@privy-io/react-auth";
 
 
 interface BridgeConfig {
@@ -170,7 +172,9 @@ function getSendTransactionCallback(
   sourceCalldata: `0x${string}`,
   isValidAmountProps: boolean,
   _calls: Call[] | undefined,
-  hookProps: PreTxHookProps
+  hookProps: PreTxHookProps,
+  isPrivyWallet: boolean,
+  privySendTransaction: (calls: Call[]) => Promise<void>
 ) {
   return async function openReviewModal(
     tokensIn: TokenTransfer[],
@@ -220,7 +224,18 @@ function getSendTransactionCallback(
     } else {
       logger.verbose("EL::useSendTransaction::send4", calls?.length);
       try {
-        await snOutput.sendAsync();
+        // Use the calls passed to sendAsync, or fallback to the ones from hook init
+        const callsToExecute = calls || _calls || [];
+        
+        // Use Privy API if Privy wallet is connected, otherwise use standard Starknet
+        if (isPrivyWallet) {
+          logger.verbose("EL::useSendTransaction::sendPrivy", callsToExecute);
+          await privySendTransaction(callsToExecute);
+        } else {
+          logger.verbose("EL::useSendTransaction::sendStarknet", callsToExecute);
+          // Use send() with calls parameter instead of sendAsync()
+          snOutput.send(callsToExecute);
+        }
         logger.verbose("EL::useSendTransaction::send5");
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send6", e);
@@ -297,6 +312,99 @@ export function useSendTransaction(
   const sourceTokenInfo = useSourceBridgeInfo({
     l2TokenAddress: props.bridgeConfig.l2_token_address
   }); // Fetch information about the source token.
+  
+  // Privy integration
+  const { privyWallet } = usePrivyContext();
+  const { getAccessToken } = usePrivy();
+  const [privyTxState, setPrivyTxState] = useState<{
+    isPending: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: Error | null;
+    data?: `0x${string}`;
+  }>({
+    isPending: false,
+    isSuccess: false,
+    isError: false,
+    error: null,
+    data: undefined,
+  });
+
+  // Check if using Privy wallet
+  const isPrivyWallet = useMemo(() => {
+    return !!privyWallet?.address;
+  }, [privyWallet?.address]);
+
+  // Function to send transaction via Privy API
+  const privySendTransaction = useCallback(async (calls: Call[]) => {
+    if (!privyWallet) {
+      throw new Error("Privy wallet not connected");
+    }
+
+    setPrivyTxState({
+      isPending: true,
+      isSuccess: false,
+      isError: false,
+      error: null,
+      data: undefined,
+    });
+
+    try {
+      const userJwt = await getAccessToken();
+      if (!userJwt) {
+        throw new Error("Failed to get access token");
+      }
+
+      const response = await fetch("/api/privy/execute-transaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userJwt}`,
+        },
+        body: JSON.stringify({
+          walletId: privyWallet.walletId,
+          calls,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error || "Failed to execute transaction");
+      }
+
+      const data = await response.json();
+      logger.verbose("EL::useSendTransaction::privyTxSuccess", data);
+
+      setPrivyTxState({
+        isPending: false,
+        isSuccess: true,
+        isError: false,
+        error: null,
+        data: data.transactionHash as `0x${string}`,
+      });
+    } catch (error: any) {
+      logger.verbose("EL::useSendTransaction::privyTxError", error);
+      setPrivyTxState({
+        isPending: false,
+        isSuccess: false,
+        isError: true,
+        error: error,
+        data: undefined,
+      });
+      throw error;
+    }
+  }, [privyWallet, getAccessToken]);
+
+  // Reset Privy transaction state
+  const resetPrivyTx = useCallback(() => {
+    setPrivyTxState({
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+      data: undefined,
+    });
+  }, []);
 
   // sanity check on amounts
   const postFeeAmount = useAmountOut(props.bridgeConfig.userInputAmount);
@@ -330,10 +438,9 @@ export function useSendTransaction(
     return calculateEthValue(sourceTokenInfo, props.bridgeConfig);
   }, [sourceTokenInfo, props.bridgeConfig]);
 
-  // Initialize the StarkNet transaction hook.
-  const snOutput = useSendTransactionSN({
-    calls: props.calls,
-  });
+  // Initialize the StarkNet transaction hook without calls
+  // Calls will be passed dynamically when send() is called
+  const snOutput = useSendTransactionSN({});
 
   // Initialize the EVM transaction hook.
   const evmOutput = useSendTransactionEVM();
@@ -380,28 +487,47 @@ export function useSendTransaction(
         sourceTokenInfo,
         amount: props.bridgeConfig.userInputAmount,
         address: addressSource || '0x0'
-      }
-    ), [mode, sourceTokenInfo, context, snOutput, evmOutput, props.bridgeConfig.userInputAmount, addressSource]);
+      },
+      isPrivyWallet,
+      privySendTransaction
+    ), [mode, sourceTokenInfo, context, snOutput, evmOutput, props.bridgeConfig.userInputAmount, addressSource, isPrivyWallet, privySendTransaction]);
 
   useEffect(() => {
-    logger.verbose("EL::useSendTransaction", {snOutput, evmOutput})
-  }, [snOutput, evmOutput]);
+    logger.verbose("EL::useSendTransaction", {snOutput, evmOutput, privyTxState})
+  }, [snOutput, evmOutput, privyTxState]);
+  
+  // Determine which output to use based on mode and wallet type
+  const getStarknetOutput = () => {
+    if (isPrivyWallet && !isBridgeMode) {
+      return privyTxState;
+    }
+    return {
+      isPending: snOutput.isPending,
+      isSuccess: snOutput.isSuccess,
+      isError: snOutput.isError,
+      error: snOutput.error,
+      data: snOutput.data ? (snOutput.data.transaction_hash as Address) : undefined,
+    };
+  };
+
+  const starknetOutput = getStarknetOutput();
   
   // Return the transaction-related state and functions.
   return {
     send: sendCallback, // Function to send the transaction.
     sendAsync: sendCallback, // Alias for the send function.
-    isPaused: !isValidAmountProps ? true : isBridgeMode ? evmOutput.isPaused : snOutput.isPaused, // Indicates if the transaction is paused.
-    isSuccess: isBridgeMode ? evmOutput.isSuccess : snOutput.isSuccess, // Indicates if the transaction was successful.
-    isError: isBridgeMode ? evmOutput.isError : snOutput.isError, // Indicates if there was an error.
-    error: isBridgeMode ? evmOutput.error : snOutput.error, // The error object, if any.
-    data: (isBridgeMode ? evmOutput.data : snOutput.data ? snOutput.data.transaction_hash as Address : undefined), // The transaction data or result.
-    isPending: isBridgeMode ? evmOutput.isPending : snOutput.isPending, // Indicates if the transaction is pending.
-    isIdle: isBridgeMode ? evmOutput.isIdle : snOutput.isIdle, // Indicates if the transaction process is idle.
-    status: isBridgeMode ? evmOutput.status : snOutput.status, // The current status of the transaction.
+    isPaused: !isValidAmountProps ? true : isBridgeMode ? evmOutput.isPaused : false, // Indicates if the transaction is paused.
+    isSuccess: isBridgeMode ? evmOutput.isSuccess : starknetOutput.isSuccess, // Indicates if the transaction was successful.
+    isError: isBridgeMode ? evmOutput.isError : starknetOutput.isError, // Indicates if there was an error.
+    error: isBridgeMode ? evmOutput.error : starknetOutput.error, // The error object, if any.
+    data: isBridgeMode ? evmOutput.data : starknetOutput.data, // The transaction data or result.
+    isPending: isBridgeMode ? evmOutput.isPending : starknetOutput.isPending, // Indicates if the transaction is pending.
+    isIdle: isBridgeMode ? evmOutput.isIdle : (!starknetOutput.isPending && !starknetOutput.isSuccess && !starknetOutput.isError), // Indicates if the transaction process is idle.
+    status: isBridgeMode ? evmOutput.status : (starknetOutput.isPending ? "pending" : starknetOutput.isSuccess ? "success" : starknetOutput.isError ? "error" : "idle"), // The current status of the transaction.
     reset: () => {
       evmOutput.reset(); // Reset the EVM transaction state.
       snOutput.reset(); // Reset the StarkNet transaction state.
+      resetPrivyTx(); // Reset the Privy transaction state.
     },
   };
 }
