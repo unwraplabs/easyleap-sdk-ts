@@ -17,13 +17,21 @@ export default defineConfig(({ command, mode }) => {
         insertTypesEntry: true,
         copyDtsFiles: true,
         exclude: ["node_modules"],
-        rollupTypes: true
-      }) // export types on build
+        rollupTypes: true,
+      }), // export types on build
     ],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src")
-      }
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+
+    optimizeDeps: {
+      include: ["starknet", "starkzap"],
+    },
+
+    define: {
+      global: "globalThis",
     },
 
     // activate library mode
@@ -34,7 +42,7 @@ export default defineConfig(({ command, mode }) => {
           lib: {
             entry: resolve(__dirname, "src/main.tsx"),
             name: "easyleap",
-            formats: ['es', 'cjs'],
+            formats: ["es", "cjs"],
             fileName: (format) => `easyleap.${format}.js`,
           },
           sourcemap: true,
@@ -48,15 +56,15 @@ export default defineConfig(({ command, mode }) => {
               "starknetkit",
               "wagmi",
               "@wagmi/core",
-              "jotai-tanstack-query"
+              "jotai-tanstack-query",
             ],
             output: {
               globals: {
                 react: "React",
-                "react-dom": "ReactDOM"
-              }
-            }
-          }
-        }
+                "react-dom": "ReactDOM",
+              },
+            },
+          },
+        },
   };
 });

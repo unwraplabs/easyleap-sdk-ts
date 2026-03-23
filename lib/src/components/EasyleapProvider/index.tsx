@@ -122,7 +122,7 @@ export function EasyleapProvider(
 
   const privyAppId =
     typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""
+      ? import.meta.env.VITE_PRIVY_APP_ID || ""
       : "";
 
   return (

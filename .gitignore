@@ -1,3 +1,7 @@
+start.sh
+rm_node.sh
+**/.env
+
 # Logs
 logs
 *.log
