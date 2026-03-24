@@ -34,8 +34,6 @@ export interface PrivyContextValue {
 
 const PrivyContext = createContext<PrivyContextValue | null>(null);
 
-const API = "http://localhost:3000/api";
-
 export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -59,7 +57,7 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
     setWalletSetupStep("creating");
 
     try {
-      const response = await fetch(`${API}/wallet/create`, {
+      const response = await fetch(`/api/wallet/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +103,7 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
       log("Fetching wallet from database...");
 
       // Check database for existing wallet
-      const getWalletRes = await fetch(`${API}/privy/get-wallet`, {
+      const getWalletRes = await fetch(`/api/wallet`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${userJwt}`,
@@ -136,7 +134,7 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
         network: "mainnet",
         rpcUrl: import.meta.env.VITE_RPC_URL,
         paymaster: {
-          nodeUrl: `${API}/paymaster`,
+          nodeUrl: `/api/paymaster`,
         },
       });
 
@@ -159,7 +157,7 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
             return {
               walletId: wallet.walletId,
               publicKey: wallet.publicKey,
-              serverUrl: `${API}/wallet/sign`,
+              serverUrl: `/api/wallet/sign`,
             };
           },
         },
