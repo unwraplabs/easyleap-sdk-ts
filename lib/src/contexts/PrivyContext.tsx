@@ -54,88 +54,6 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const setupInProgressRef = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
 
-  // Deploy wallet function
-  // const deployWallet = async (walletId: string, userJwt: string) => {
-  //   log("Deploying wallet...", { walletId });
-  //   setWalletSetupStep("deploying");
-
-  //   try {
-  //     const deployRes = await fetch("/api/privy/deploy-wallet", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${userJwt}`,
-  //       },
-  //       body: JSON.stringify({ walletId }),
-  //     });
-
-  //     if (!deployRes.ok) {
-  //       const errorData = await deployRes.json().catch(() => ({}));
-  //       throw new Error(errorData?.error || "Failed to deploy wallet");
-  //     }
-
-  //     const deployData = await deployRes.json();
-  //     log("Wallet deployed", { transactionHash: deployData.transactionHash });
-
-  //     // Update state with deployed wallet
-  //     setPrivyWallet((prev) =>
-  //       prev
-  //         ? {
-  //             ...prev,
-  //             isDeployed: true,
-  //           }
-  //         : null,
-  //     );
-
-  //     setWalletSetupStep("complete");
-  //     toast({
-  //       description: "Wallet created and deployed successfully!",
-  //     });
-  //   } catch (error: any) {
-  //     log("Error deploying wallet", error);
-  //     throw error;
-  //   }
-  // };
-
-  // Create and deploy wallet function
-  // const createAndDeployWallet = async (userJwt: string) => {
-  //   log("Creating wallet...");
-  //   setWalletSetupStep("creating");
-
-  //   try {
-  //     const createRes = await fetch("/api/privy/create-wallet", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${userJwt}`,
-  //       },
-  //     });
-
-  //     if (!createRes.ok) {
-  //       const errorData = await createRes.json().catch(() => ({}));
-  //       throw new Error(errorData?.error || "Failed to create wallet");
-  //     }
-
-  //     const createData = await createRes.json();
-  //     log("Wallet created", { walletId: createData.walletId });
-
-  //     // Update state with created wallet
-  //     const newWallet: PrivyWalletData = {
-  //       walletId: createData.walletId,
-  //       address: createData.address,
-  //       publicKey: createData.publicKey,
-  //       isDeployed: false,
-  //     };
-  //     setPrivyWallet(newWallet);
-
-  //     // Deploy wallet
-  //     await deployWallet(createData.walletId, userJwt);
-  //   } catch (error: any) {
-  //     log("Error creating wallet", error);
-  //     throw error;
-  //   }
-  // };
-
   async function createWallet(token: string) {
     log("Creating wallet...");
     setWalletSetupStep("creating");
@@ -213,20 +131,14 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setPrivyWallet(wallet);
 
-      console.log(">>>>>> Before starkzap init <<<<<<");
-
       // Initialize Starkzap
       const sdk = new StarkZap({
         network: "mainnet",
-        // network: "mainnet",
-        rpcUrl:
-          "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_10/dC6tFhuox73F7S8TLlTId",
+        rpcUrl: import.meta.env.VITE_RPC_URL,
         paymaster: {
           nodeUrl: `${API}/paymaster`,
         },
       });
-
-      console.log(">>>>>> After starkzap init <<<<<<");
 
       const onboard = await sdk.onboard({
         strategy: "privy",
@@ -253,47 +165,11 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
-      console.log(">>>>>> After calling onboard <<<<<<");
-
       setWalletSetupStep("complete");
 
       // The following wallet is to be used
       const connectedWallet = onboard.wallet;
-      console.log(
-        "===================== Connected wallet: ",
-        { connectedWallet },
-        "===========================",
-      );
-
-      // if (wallet) {
-      //   log("Wallet found in database", {
-      //     walletId: wallet.walletId,
-      //     isDeployed: wallet.isDeployed,
-      //   });
-
-      //   // Wallet exists in DB
-      //   const walletData: PrivyWalletData = {
-      //     walletId: wallet.walletId,
-      //     address: wallet.address,
-      //     publicKey: wallet.publicKey,
-      //     isDeployed: wallet.isDeployed,
-      //   };
-      //   setPrivyWallet(walletData);
-
-      //   if (wallet.isDeployed) {
-      //     // Wallet is ready
-      //     log("Wallet is already deployed");
-      //     setWalletSetupStep("complete");
-      //   } else {
-      //     // Wallet exists but not deployed - deploy it
-      //     log("Wallet exists but not deployed, deploying...");
-      //     await deployWallet(wallet.walletId, userJwt);
-      //   }
-      // } else {
-      //   // No wallet exists - create and deploy
-      //   log("No wallet found, creating new wallet...");
-      //   await createAndDeployWallet(userJwt);
-      // }
+      log("Wallet connected", { connectedWallet });
     } catch (error: any) {
       log("Error setting up wallet", error);
       toast({
@@ -302,7 +178,6 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "destructive",
       });
       setWalletSetupStep("idle");
-      console.log(">>>>> set privy wallet set to null, line: 304 <<<<<");
       setPrivyWallet(null);
     } finally {
       setIsLoadingWallet(false);
@@ -314,7 +189,6 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!user || typeof window === "undefined") {
       log("User logged out, clearing wallet state");
-      console.log(">>>>> set privy wallet set to null, line: 316 <<<<<");
       setPrivyWallet(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;
@@ -362,7 +236,6 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const disconnectPrivy = async () => {
     try {
       await logout();
-      console.log(">>>>> set privy wallet set to null, line: 364 <<<<<");
       setPrivyWallet(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;

@@ -1,5 +1,3 @@
-// https://nonlevel-arletha-interchangeably.ngrok-free.dev/
-
 import {
   Address,
   UseSendTransactionProps,
@@ -400,14 +398,10 @@ export function useSendTransaction(
           throw new Error("Failed to get access token");
         }
 
-        // const response = await fetch("/api/privy/execute-transaction", {
-        const response = await fetch(
-          "https://nonlevel-arletha-interchangeably.ngrok-free.dev/api/privy/execute-transaction",
-          {
+        const response = await fetch("/api/privy/execute-transaction", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "any",
               Authorization: `Bearer ${userJwt}`,
             },
             body: JSON.stringify({

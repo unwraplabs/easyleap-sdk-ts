@@ -1,11 +1,11 @@
 import {
   useAccount as useAccountSn,
-  // useSwitchChain,
+  useSwitchChain,
 } from "@starknet-react/core";
 import { createConfig, http, switchChain as switchChainEVM } from "@wagmi/core";
 import { mainnet, sepolia } from "@wagmi/core/chains";
 import { useEffect, useMemo } from "react";
-// import { num } from "starknet";
+import { num } from "starknet";
 import { useAccount as useAccountWagmi, useConfig } from "wagmi";
 import { InteractionMode, useSharedState } from "../contexts/SharedState";
 import { useTransactionHistory } from "./useTransactionHistory";
@@ -45,8 +45,6 @@ export function useAccount(): useAccountResult {
   const { privyWallet } = usePrivyContext();
   const sharedState = useSharedState();
 
-  console.log(">>>>>", { privyWallet }, "<<<<<");
-
   // Prioritize Privy wallet if connected
   const addressDestination = privyWallet?.address
     ? (privyWallet.address as `0x${string}`)
@@ -62,28 +60,20 @@ export function useAccount(): useAccountResult {
     switchChainEVM(evmConfig, { chainId: config.chains[0].id as 1 | 11155111 });
   }
 
-  console.log(">>>>>", { sharedState }, "<<<<<");
-  // const result = useSwitchChain({
-  //   params: {
-  //     chainId: num.getHexString(sharedState.chains.starknet.id.toString()),
-  //   },
-  // });
+  const result = useSwitchChain({
+    params: {
+      chainId: num.getHexString(sharedState.chains.starknet.id.toString()),
+    },
+  });
 
-  console.log(
-    ">>>>>",
-    { chainIdSN, sharedStateId: sharedState.chains.starknet.id },
-    "<<<<<",
-  );
-
-  // useEffect(() => {
-  //   if (addressDestination) {
-  //     if (chainIdSN != sharedState.chains.starknet.id) {
-  //       result.switchChain();
-  //     }
-  //   }
-  //   console.log(">>>>>", { result }, ">>>>>");
-  //   if (result.error) console.error("switching", result.error);
-  // }, [addressDestination, chainIdSN, sharedState.chains.starknet]);
+  useEffect(() => {
+    if (addressDestination) {
+       if (chainIdSN != sharedState.chains.starknet.id) {
+        result.switchChain();
+      }
+    }
+     if (result.error) console.error("switching", result.error);
+  }, [addressDestination, chainIdSN, sharedState.chains.starknet]);
 
   useEffect(() => {
     if (
