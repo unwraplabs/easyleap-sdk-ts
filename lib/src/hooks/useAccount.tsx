@@ -1,5 +1,6 @@
 import {
   useAccount as useAccountSn,
+  useNetwork,
   useSwitchChain
 } from "@starknet-react/core";
 import { createConfig, http, switchChain as switchChainEVM } from "@wagmi/core";
@@ -43,6 +44,7 @@ export function useAccount(): useAccountResult {
   const config = useConfig();
   const { address: addressSource, chainId: chainIdEVM } = useAccountWagmi();
   const { address: addressDestination, chainId: chainIdSN } = useAccountSn();
+  const { chain } = useNetwork();
   const sharedState = useSharedState();
 
   // init tx history polling (bridge-specific but kept for signature compat)
@@ -56,18 +58,18 @@ export function useAccount(): useAccountResult {
 
   const result = useSwitchChain({
     params: {
-      chainId: num.getHexString(sharedState.chains.starknet.id.toString())
+      chainId: num.getHexString(chain.id.toString())
     }
   });
 
   useEffect(() => {
     if (addressDestination) {
-      if (chainIdSN != sharedState.chains.starknet.id) {
+      if (chainIdSN != chain.id) {
         result.switchChain();
       }
     }
     if (result.error) console.error("switching", result.error);
-  }, [addressDestination, chainIdSN, sharedState.chains.starknet]);
+  }, [addressDestination, chainIdSN, chain]);
 
   useEffect(() => {
     // Mode logic:

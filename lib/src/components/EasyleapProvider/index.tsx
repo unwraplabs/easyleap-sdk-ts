@@ -19,7 +19,7 @@ import {
 } from "wagmi";
 
 import { Toaster } from "@lib/components/ui/toaster";
-import { SharedStateProvider, useSharedState } from "@lib/contexts/SharedState";
+import { SharedStateProvider } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
 
 export interface EasyleapConfig {
@@ -92,8 +92,6 @@ export function EasyleapProvider(
     theme: {},
   },
 ) {
-  const context = useSharedState();
-
   const wagmiConfig = React.useMemo(() => {
     if (!props.wagmiConfig) {
       return defaultEasyleapConfig().wagmiConfig;
@@ -111,15 +109,6 @@ export function EasyleapProvider(
   const queryClient = React.useMemo(() => {
     return props.queryClient || defaultQueryClient;
   }, [props.queryClient]);
-
-  React.useEffect(() => {
-    // todo need to ensure only one chain can be given
-    if (starknetConfig.chains && starknetConfig.chains.length > 0) {
-      context.setChains({
-        starknet: starknetConfig.chains[0],
-      });
-    }
-  }, [starknetConfig.chains]);
 
   return (
     <SharedStateProvider>

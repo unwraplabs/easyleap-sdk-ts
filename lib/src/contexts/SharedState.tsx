@@ -1,4 +1,3 @@
-import { Chain as ChainSN, sepolia as sepoliaSN } from "@starknet-react/chains";
 import React from "react";
 
 // BRIDGE MODE - ReviewModalProps import commented out (review modal is bridge-specific)
@@ -21,17 +20,11 @@ export enum InteractionMode {
   None = "None"
 }
 
-export interface ChainsConfig {
-  starknet: ChainSN;
-}
-
 export interface SharedContext {
   mode: InteractionMode;
   setMode: (value: InteractionMode) => void;
   isModeSwitchedManually: boolean;
   setModeSwitchedManually: (value: boolean) => void;
-  chains: ChainsConfig;
-  setChains: (value: ChainsConfig) => void;
 
   // BRIDGE MODE - reviewModalProps commented out (bridge-specific)
   // reviewModalProps: ReviewModalProps;
@@ -64,10 +57,6 @@ const SharedStateContext = React.createContext({
   setMode: () => {},
   isModeSwitchedManually: false,
   setModeSwitchedManually: () => {},
-  chains: {
-    starknet: sepoliaSN
-  },
-  setChains: () => {},
 
   // BRIDGE MODE - reviewModalProps commented out
   // reviewModalProps: {
@@ -117,9 +106,6 @@ export const SharedStateProvider = ({
   const [mode, setMode] = React.useState(InteractionMode.None);
   const [isModeSwitchedManually, setModeSwitchedManually] =
     React.useState(false);
-  const [chains, setChains] = React.useState<ChainsConfig>({
-    starknet: sepoliaSN
-  });
 
   // BRIDGE MODE - reviewModalProps state commented out
   // const [reviewModalProps, setReviewModalProps] =
@@ -198,11 +184,9 @@ export const SharedStateProvider = ({
     <SharedStateContext.Provider
       value={{
         mode,
-        chains,
         // BRIDGE MODE - reviewModalProps commented out
         // reviewModalProps,
         // setReviewModalProps: memoizedSetReviewModalProps,
-        setChains,
         setMode,
         isModeSwitchedManually,
         setModeSwitchedManually,
