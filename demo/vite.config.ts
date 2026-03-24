@@ -7,15 +7,20 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
   return {
-    plugins: [
-      tsconfigPaths(),
-      react(),
-    ],
+    plugins: [tsconfigPaths(), react()],
 
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
+    },
+
+    optimizeDeps: {
+      include: ["starknet", "starkzap"],
+    },
+
+    define: {
+      global: "globalThis",
     },
   };
 });
