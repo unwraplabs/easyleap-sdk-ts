@@ -15,5 +15,10 @@
     "preview:demo": "cd demo && pnpm preview",
     "storybook:lib": "cd lib && pnpm storybook",
     "publish:lib": "cd lib && npm publish --tag beta"
+  },
+  "pnpm": {
+    "overrides": {
+      "viem": "^2.47.6"
+    }
   }
 }

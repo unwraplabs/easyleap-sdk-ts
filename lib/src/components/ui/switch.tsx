@@ -31,13 +31,20 @@ const Switch = React.forwardRef<
       <Icons.starknetLogo className="easyleap-block easyleap-size-[30px] group-data-[state=checked]:easyleap-hidden" />
     </SwitchPrimitives.Thumb>
 
+    {/* Label shown when switch is ON (EVM mode) */}
     {!isMobile && <span className="easyleap-absolute easyleap-left-[15%] easyleap-hidden easyleap-text-sm !easyleap-text-white easyleap-font-semibold peer-data-[state=checked]/thumb:easyleap-block">
-      Bridge
+      EVM
     </span>}
 
+    {/* Label shown when switch is OFF (Starknet mode) */}
     {!isMobile && <span className="easyleap-absolute easyleap-left-[33%] easyleap-block easyleap-text-sm !easyleap-text-white easyleap-font-semibold peer-data-[state=checked]/thumb:easyleap-hidden">
       Starknet
     </span>}
+
+    {/* BRIDGE MODE - old "Bridge" label commented out */}
+    {/* {!isMobile && <span className="easyleap-absolute easyleap-left-[15%] easyleap-hidden easyleap-text-sm !easyleap-text-white easyleap-font-semibold peer-data-[state=checked]/thumb:easyleap-block">
+      Bridge
+    </span>} */}
   </SwitchPrimitives.Root>
 });
 Switch.displayName = SwitchPrimitives.Root.displayName;

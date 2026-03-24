@@ -7,10 +7,11 @@ declare enum TransactionExecutionStatus {
 }
 
 export function getProvider() {
+  const rpcUrl =
+    import.meta.env.VITE_RPC_URL || "https://starknet-sepolia.public.blastapi.io";
+
   return new RpcProvider({
-    nodeUrl:
-      process.env.NEXT_PUBLIC_RPC_URL ||
-      "https://starknet-sepolia.public.blastapi.io",
+    nodeUrl: rpcUrl,
     blockIdentifier: "pending",
   });
 }

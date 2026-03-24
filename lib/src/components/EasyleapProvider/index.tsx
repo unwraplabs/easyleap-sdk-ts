@@ -121,11 +121,6 @@ export function EasyleapProvider(
     }
   }, [starknetConfig.chains]);
 
-  const privyAppId =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""
-      : "";
-
   return (
     <SharedStateProvider>
       <ThemeProvider theme={props.theme}>

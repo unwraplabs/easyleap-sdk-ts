@@ -1,8 +1,12 @@
-import { useMemo } from "react";
-import { standardise } from "@lib/utils";
-import { ZERO_ADDRESS_EVM } from "@lib/utils/constants";
+// BRIDGE MODE - this hook is entirely bridge-specific.
+// It maps L2 token addresses to their corresponding L1 bridge/token addresses.
+// The implementation is commented out; the hook always returns undefined.
+
+// import { useMemo } from "react";
+// import { standardise } from "@lib/utils";
+// import { ZERO_ADDRESS_EVM } from "@lib/utils/constants";
 import { Address } from "@starknet-react/chains";
-import { useSupportedTokens } from "./useSupportedTokens";
+// import { useSupportedTokens } from "./useSupportedTokens";
 
 export interface useSourceBridgeInfoProps {
   l2TokenAddress: Address;
@@ -17,37 +21,32 @@ export interface SourceBridgeInfo {
 export type useSourceBridgeInfoResult = SourceBridgeInfo | undefined;
 
 /**
- * Retrieves the corresponding L1 bridge and token information for a given L2 token address.
- *
- * @param l2TokenAddress - The L2 token address in hexadecimal format.
- * @returns An object containing the L1 bridge and token addresses, or undefined if not found.
+ * BRIDGE MODE - implementation commented out.
+ * Previously retrieved the L1 bridge and token information for a given L2 token address.
+ * Always returns undefined now; re-enable when bridge mode is restored.
  */
 export function useSourceBridgeInfo(
-  { l2TokenAddress }: useSourceBridgeInfoProps
+  { l2TokenAddress: _l2TokenAddress }: useSourceBridgeInfoProps
 ): useSourceBridgeInfoResult {
-  const supportedTokens = useSupportedTokens();
+  // BRIDGE MODE - token lookup commented out
+  // const supportedTokens = useSupportedTokens();
+  // const sourceToken: useSourceBridgeInfoResult = useMemo(() => {
+  //   const tokensInfo = supportedTokens.filter((token) => {
+  //     return standardise(token.l2_token_address) === standardise(l2TokenAddress);
+  //   });
+  //   const tokenInfo = tokensInfo.length ? tokensInfo[0] : undefined;
+  //   let requireApproval = true;
+  //   if (tokenInfo && tokenInfo.id === "eth") {
+  //     tokenInfo.l1_token_address = ZERO_ADDRESS_EVM;
+  //     requireApproval = false;
+  //   }
+  //   return tokenInfo ? {
+  //     l1_bridge_address: tokenInfo.l1_bridge_address,
+  //     l1_token_address: tokenInfo.l1_token_address,
+  //     requireApproval: requireApproval,
+  //   } : undefined;
+  // }, [supportedTokens, l2TokenAddress]);
+  // return sourceToken;
 
-  const sourceToken: useSourceBridgeInfoResult = useMemo(() => {
-    // Filter tokens to find the one matching the provided L2 token address
-    const tokensInfo = supportedTokens.filter((token) => {
-      return standardise(token.l2_token_address) === standardise(l2TokenAddress);
-    });
-
-    const tokenInfo = tokensInfo.length ? tokensInfo[0] : undefined;
-
-    // If the token is Ether, set its L1 token address to the zero address
-    let requireApproval = true;
-    if (tokenInfo && tokenInfo.id === "eth") {
-      tokenInfo.l1_token_address = ZERO_ADDRESS_EVM;
-      requireApproval = false;
-    }
-
-    return tokenInfo ? {
-      l1_bridge_address: tokenInfo.l1_bridge_address,
-      l1_token_address: tokenInfo.l1_token_address,
-      requireApproval: requireApproval,
-    } : undefined;
-  }, [supportedTokens, l2TokenAddress]);
-
-  return sourceToken;
+  return undefined;
 }

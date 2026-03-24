@@ -1,8 +1,9 @@
 import { UseReadContractResult } from "@starknet-react/core";
 import { useMemo } from "react";
 
-import { useMode } from "./useMode";
-import { InteractionMode } from "@lib/contexts";
+// BRIDGE MODE - mode check no longer needed since fee logic is disabled
+// import { useMode } from "./useMode";
+// import { InteractionMode } from "@lib/contexts";
 
 // todo should define a proper output type
 
@@ -12,61 +13,32 @@ export type UseReadContractResult_EasyLeap = Omit<UseReadContractResult<any, any
 }
 
 /**
+ * Returns the amount out after fees.
+ * BRIDGE MODE: fee calculation was 0.05% of the input amount when bridging.
+ * Currently, no fees are applied in Starknet or EVM mode.
  *
  * @param amount_raw In full decimal string format (e.g. "1000000000000000000" for 1 ETH)
  */
 export function useAmountOut(amount_raw: bigint): UseReadContractResult_EasyLeap {
-  const mode = useMode();
-  // const output = useReadContract({
-  //   abi: [
-  //     {
-  //       name: "get_fee",
-  //       type: "function",
-  //       inputs: [
-  //         {
-  //           name: "amount",
-  //           type: "core::integer::u128"
-  //         }
-  //       ],
-  //       outputs: [
-  //         {
-  //           type: "core::integer::u128"
-  //         }
-  //       ],
-  //       state_mutability: "view"
-  //     }
-  //   ] as const,
-  //   functionName: "get_fee",
-  //   address: ADDRESSES.STARKNET.EXECUTOR as `0x${string}`,
-  //   args: [amount_raw]
-  // });
+  // BRIDGE MODE - mode-based fee calculation commented out
+  // const mode = useMode();
+  // const output = useMemo(() => {
+  //   if (mode != InteractionMode.Bridge) {
+  //     return { fee: 0n, amountOut: amount_raw };
+  //   }
+  //   const fee = amount_raw * 5n / 10000n; // 0.05% fee
+  //   const amountOut = amount_raw - fee;
+  //   return { fee, amountOut };
+  // }, [amount_raw]);
 
+  // No fees in Starknet/EVM mode
   const output = useMemo(() => {
-    if (mode != InteractionMode.Bridge) {
-      return {
-        fee: 0n,
-        amountOut: amount_raw
-      }
-    }
-    const fee = amount_raw * 5n / 10000n; // 0.05% fee
-    const amountOut = amount_raw - fee;
-    return { fee, amountOut };
+    return {
+      fee: 0n,
+      amountOut: amount_raw
+    };
   }, [amount_raw]);
 
-  // const postFeeAmount = useMemo(() => {
-  //   if (mode == InteractionMode.Bridge) {
-  //     ret
-  //   }
-  //   return amount_raw;
-  // }, [output.data, amount_raw, mode]);
-
-  // const toReturn = {
-  //   amountOut: postFeeAmount,
-  //   fee: output.data as bigint,
-  //   ...output
-  // };
-  // delete toReturn.data;
-  // return toReturn;
   return {
     amountOut: output.amountOut,
     fee: output.fee,
@@ -79,5 +51,5 @@ export function useAmountOut(amount_raw: bigint): UseReadContractResult_EasyLeap
     error: null,
     fetchStatus: "idle",
     data: null,
-  }
+  };
 }

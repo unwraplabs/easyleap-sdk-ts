@@ -26,7 +26,7 @@ export const useWaitForTransaction = (waitForTransactionProps: WaitForTransactio
     logger.verbose("waitForTransactionProps", {
       mode, snTx, evmTx, inputProps: waitForTransactionProps
     })
-    if (mode == InteractionMode.Bridge) {
+    if (mode === InteractionMode.EVM) {
       return {
         isLoading: evmTx.isLoading,
         isSuccess: evmTx.isSuccess,

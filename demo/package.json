@@ -42,7 +42,7 @@
     "starkzap": "^1.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "viem": "^2.23.0",
+    "viem": "^2.47.6",
     "vite-tsconfig-paths": "^5.1.4",
     "wagmi": "^2.19.5",
     "zod": "3.20.6"
@@ -68,4 +68,3 @@
     "vite-plugin-dts": "^4.5.0"
   }
 }
-

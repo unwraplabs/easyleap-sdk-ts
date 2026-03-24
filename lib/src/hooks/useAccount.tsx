@@ -15,7 +15,7 @@ export enum Chains {
   STARKNET = "STARKNET"
 }
 
-/** Return type of  */
+/** Return type of useAccount */
 export interface useAccountResult {
   addressSource: `0x${string}` | undefined;
   addressDestination: `0x${string}` | undefined;
@@ -34,7 +34,9 @@ export const evmConfig = createConfig({
 });
 
 /**
- * This hook provides the account information and the mode of interaction with the Starknet DApp
+ * This hook provides the account information and the mode of interaction with the DApp.
+ * Starknet mode: when a Starknet wallet is connected
+ * EVM mode: when an EVM wallet is connected
  * @returns UseAccountResult
  */
 export function useAccount(): useAccountResult {
@@ -43,11 +45,10 @@ export function useAccount(): useAccountResult {
   const { address: addressDestination, chainId: chainIdSN } = useAccountSn();
   const sharedState = useSharedState();
 
-  // init tx history polling
+  // init tx history polling (bridge-specific but kept for signature compat)
   useTransactionHistory(addressDestination);
 
-  // todo need to make this generic
-  // hard coding for one chain for now
+  // EVM chain switching - keep for EVM mode
   if (addressSource && chainIdEVM != config.chains[0].id) {
     console.log("Switching to mainnet");
     switchChainEVM(evmConfig, { chainId: config.chains[0].id as 1 | 11155111 });
@@ -69,17 +70,34 @@ export function useAccount(): useAccountResult {
   }, [addressDestination, chainIdSN, sharedState.chains.starknet]);
 
   useEffect(() => {
-    if (
-      addressSource &&
-      addressDestination &&
-      !sharedState.isModeSwitchedManually
-    ) {
-      sharedState.setMode(InteractionMode.Bridge);
+    // Mode logic:
+    // - Only SN wallet → Starknet mode
+    // - Only EVM wallet → EVM mode
+    // - Both connected → Starknet mode (unless manually switched to EVM)
+    // - Neither → None mode
+
+    if (addressSource && addressDestination) {
+      // Both wallets connected: respect manual switch, otherwise default to Starknet
+      if (!sharedState.isModeSwitchedManually) {
+        sharedState.setMode(InteractionMode.Starknet);
+      }
+      // If manually switched, keep the current mode as-is
     } else if (addressDestination && !addressSource) {
       sharedState.setMode(InteractionMode.Starknet);
-    } else if (!addressSource && !addressDestination) {
+    } else if (addressSource && !addressDestination) {
+      sharedState.setMode(InteractionMode.EVM);
+    } else {
       sharedState.setMode(InteractionMode.None);
     }
+
+    // BRIDGE MODE - old logic commented out
+    // if (addressSource && addressDestination && !sharedState.isModeSwitchedManually) {
+    //   sharedState.setMode(InteractionMode.Bridge);
+    // } else if (addressDestination && !addressSource) {
+    //   sharedState.setMode(InteractionMode.Starknet);
+    // } else if (!addressSource && !addressDestination) {
+    //   sharedState.setMode(InteractionMode.None);
+    // }
   }, [addressSource, addressDestination]);
 
   const source = useMemo(() => {

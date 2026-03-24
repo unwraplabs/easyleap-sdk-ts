@@ -32,18 +32,23 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Switch
-                id="airplane-mode"
-                checked={mode == InteractionMode.Bridge}
+                id="mode-switch"
+                checked={mode === InteractionMode.EVM}
                 onCheckedChange={(value) => {
                   if (!addressSource) {
                     return toast({
-                      title: "Connect EVM wallet to enable bridge mode"
+                      title: "Connect an EVM wallet to enable EVM mode"
                     });
                   }
                   sharedState.setMode(
-                    value ? InteractionMode.Bridge : InteractionMode.Starknet
+                    value ? InteractionMode.EVM : InteractionMode.Starknet
                   );
                   sharedState.setModeSwitchedManually(true);
+
+                  // BRIDGE MODE - old bridge toggle logic commented out
+                  // sharedState.setMode(
+                  //   value ? InteractionMode.Bridge : InteractionMode.Starknet
+                  // );
                 }}
                 className={cn(
                   "easyleap-font-firaCode easyleap-border-[1.5px] easyleap-border-[#DBDBDB]/60",
@@ -54,20 +59,37 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
                   border:
                     mode === InteractionMode.Starknet
                       ? theme?.starknetMode?.switchButton?.border
-                      : theme?.bridgeMode?.switchButton?.border,
+                      : theme?.evmMode?.switchButton?.border,
                   color:
                     mode === InteractionMode.Starknet
                       ? theme?.starknetMode?.switchButton?.color
-                      : theme?.bridgeMode?.switchButton?.color,
+                      : theme?.evmMode?.switchButton?.color,
                   backgroundColor:
                     mode === InteractionMode.Starknet
                       ? theme?.starknetMode?.switchButton?.backgroundColor
-                      : theme?.bridgeMode?.switchButton?.backgroundColor
+                      : theme?.evmMode?.switchButton?.backgroundColor,
+
+                  // BRIDGE MODE - old bridge theme commented out
+                  // border: mode === InteractionMode.Starknet
+                  //   ? theme?.starknetMode?.switchButton?.border
+                  //   : theme?.bridgeMode?.switchButton?.border,
+                  // color: mode === InteractionMode.Starknet
+                  //   ? theme?.starknetMode?.switchButton?.color
+                  //   : theme?.bridgeMode?.switchButton?.color,
+                  // backgroundColor: mode === InteractionMode.Starknet
+                  //   ? theme?.starknetMode?.switchButton?.backgroundColor
+                  //   : theme?.bridgeMode?.switchButton?.backgroundColor,
                 }}
               />
             </TooltipTrigger>
             <TooltipContent className="easyleap-mr-5 easyleap-mt-2 easyleap-max-w-[20rem] easyleap-border easyleap-bg-[white] easyleap-px-4 easyleap-py-2 easyleap-text-[black]">
               <p>
+                Switch to EVM mode to interact with this DApp using your EVM
+                wallet directly.
+              </p>
+
+              {/* BRIDGE MODE - old bridge tooltip text commented out */}
+              {/* <p>
                 Switch to Bridge mode to deposit directly from ETH Mainnet into
                 your starknet wallet in a single step.
               </p>
@@ -78,7 +100,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
                 <a href="https://easyleap.io/" className="easyleap-underline">
                   easyleap.io.
                 </a>
-              </p>
+              </p> */}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
