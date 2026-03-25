@@ -1,6 +1,6 @@
 import {
   UseBalanceResult,
-  useBalance as useBalanceSN
+  useBalance as useBalanceSN,
 } from "@starknet-react/core";
 import { useEffect, useMemo } from "react";
 import { useBalance as useBalanceWagmi } from "wagmi";
@@ -9,25 +9,30 @@ import { useAccount } from "./useAccount";
 import { useMode } from "./useMode";
 import { logger } from "@lib/utils/logger";
 
-export interface UseBalanceProps {
-  l2TokenAddress: `0x${string}`;
-  // EVM mode: optionally pass an L1 token address to fetch EVM balance
-  l1TokenAddress?: `0x${string}`;
-}
-
-export function useBalance(props: UseBalanceProps): UseBalanceResult {
-  const { l2TokenAddress, l1TokenAddress } = props;
+/**
+ * EasyLeap balance hook.
+ *
+ * Callers pass only a single token address. Internally, we pick the correct
+ * underlying balance query based on the active interaction mode.
+ *
+ * Notes:
+ * - Starknet mode uses the passed token address as the L2 token address.
+ * - EVM mode uses the passed token address as the EVM token address.
+ */
+export function useBalance(tokenAddress: `0x${string}`): UseBalanceResult {
   const mode = useMode();
   const { evmAddress, starknetAddress } = useAccount();
 
   const starknetBalance = useBalanceSN({
-    token: l2TokenAddress,
-    address: starknetAddress,
+    token: tokenAddress,
+    // Disable query when in EVM mode
+    address: mode === InteractionMode.EVM ? undefined : starknetAddress,
   });
 
   const evmBalance = useBalanceWagmi({
-    address: evmAddress,
-    token: l1TokenAddress,
+    // Disable query when in Starknet mode
+    address: mode === InteractionMode.EVM ? evmAddress : undefined,
+    token: tokenAddress,
   });
 
   const result = useMemo(() => {
@@ -44,12 +49,11 @@ export function useBalance(props: UseBalanceProps): UseBalanceResult {
       mode,
       starknetAddress,
       evmAddress,
-      l2TokenAddress,
       error: result.error,
-      l1TokenAddress,
-      formatted: result?.data?.formatted
+      tokenAddress,
+      formatted: result?.data?.formatted,
     });
-  }, [result, mode, starknetAddress, evmAddress, l2TokenAddress, l1TokenAddress]);
+  }, [result, mode, starknetAddress, evmAddress, tokenAddress]);
 
   return result;
 }
