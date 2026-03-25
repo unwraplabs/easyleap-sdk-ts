@@ -18,7 +18,7 @@ interface ModeSwitcherProps {
 }
 
 export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
-  const { addressDestination, addressSource } = useAccount();
+  const { starknetAddress, evmAddress } = useAccount();
 
   const sharedState = useSharedState();
   const mode = useMode();
@@ -27,7 +27,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
 
   return (
     <div className="easylea-items-center easyleap-flex">
-      {(addressDestination || addressSource) && (
+      {(starknetAddress || evmAddress) && (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -35,7 +35,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
                 id="mode-switch"
                 checked={mode === InteractionMode.EVM}
                 onCheckedChange={(value) => {
-                  if (!addressSource) {
+                  if (!evmAddress) {
                     return toast({
                       title: "Connect an EVM wallet to enable EVM mode"
                     });

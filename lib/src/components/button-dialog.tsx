@@ -52,7 +52,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
 }) => {
   const mode = useMode();
   const sharedState = useSharedState();
-  const { addressSource, addressDestination } = useAccount();
+  const { evmAddress, starknetAddress } = useAccount();
 
   const { disconnect: disconnectSN } = useDisconnectSN();
   const { disconnect: disconnectWagmi } = useDisconnectWagmi();
@@ -206,7 +206,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     // } else {
     //   dismiss();
     // }
-  }, [addressSource, addressDestination, mode]);
+  }, [evmAddress, starknetAddress, mode]);
 
   return (
     <div
@@ -214,12 +214,12 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         "easyleap-w-full easyleap-z-10 easyleap-flex easyleap-items-center easyleap-gap-4 md:easyleap-flex-row easyleap-rounded-[50px]",
         {
           "easyleap-bg-white easyleap-px-2 easyleap-pt-1 easyleap-pb-1":
-            addressSource || addressDestination
+            evmAddress || starknetAddress
         }
       )}
       style={{
         backgroundColor:
-          addressSource || addressDestination
+          evmAddress || starknetAddress
             ? mode === InteractionMode.EVM
               ? theme?.evmMode?.mainBgColor
               : theme?.starknetMode?.mainBgColor
@@ -241,7 +241,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
           <DialogTrigger asChild>
             <div className="easyleap-w-full easyleap-font-firaCode easylea-items-center easyleap-flex">
               {/* No wallet connected */}
-              {!addressSource && !addressDestination && (
+              {!evmAddress && !starknetAddress && (
                 <Button
                   variant="outline"
                   style={{
@@ -279,7 +279,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                   <span className="easyleap-rounded-full easyleap-bg-[#fff] easyleap-p-1 easyleap--ml-[15px]">
                     {getWalletIcon(connector?.id ?? "braavos")}
                   </span>
-                  {shortAddress(addressDestination || "", 4, 4)}
+                  {shortAddress(starknetAddress || "", 4, 4)}
                 </Button>
               )}
 
@@ -300,7 +300,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                   <span className="easyleap-rounded-full easyleap-bg-white easyleap-p-1 easyleap--ml-[15px]">
                     {getWalletIcon(connectorEVM?.name.toLocaleLowerCase() ?? "metamask")}
                   </span>
-                  {shortAddress(addressSource, 4, 4)}
+                  {shortAddress(evmAddress, 4, 4)}
                 </Button>
               )}
 
@@ -312,7 +312,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                     <span className="easyleap-rounded-full easyleap-bg-white easyleap-p-1 easyleap--ml-[15px]">
                       {getWalletIcon(connectorEVM?.name.toLocaleLowerCase() ?? "metamask")}
                     </span>
-                    {shortAddress(addressSource, 4, 4)}
+                    {shortAddress(evmAddress, 4, 4)}
                   </Button>
                   <Button style={{ color: theme?.bridgeMode?.starknetButton?.color, backgroundColor: theme?.bridgeMode?.starknetButton?.backgroundColor, border: theme?.bridgeMode?.starknetButton?.border, borderRadius: theme?.bridgeMode?.starknetButton?.borderRadius }}
                     className={cn("easyleap-z-0 easyleap-flex easyleap-w-fit easyleap-items-center easyleap-justify-start easyleap-gap-3 easyleap-rounded-[50px] easyleap-font-semibold hover:easyleap-bg-[#35314F] easyleap-text-white", className)}>
@@ -375,7 +375,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
               <h5 className="easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
                 Starknet Wallet
               </h5>
-              {!addressDestination ? (
+              {!starknetAddress ? (
                 <SNWalletOptions />
               ) : (
                 <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-2">
@@ -391,7 +391,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                       >
                         {getWalletIcon(connector?.id ?? "braavos")}
                       </span>
-                      {shortAddress(addressDestination, 8, 8)}
+                      {shortAddress(starknetAddress, 8, 8)}
                     </div>
 
                     <X
@@ -422,7 +422,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                 Link your EVM wallet to transfer L1 tokens seamlessly into the DApp!
               </p> */}
 
-              {!addressSource ? (
+              {!evmAddress ? (
                 <Accordion
                   type="single"
                   collapsible
@@ -470,13 +470,13 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                       <span className="easyleap-flex easyleap-items-center easyleap-justify-start easyleap-gap-3">
                         {getWalletIcon(connectorEVM?.name.toLocaleLowerCase() ?? "metamask")}
                       </span>
-                      {shortAddress(addressSource, 8, 8)}
+                      {shortAddress(evmAddress, 8, 8)}
                     </div>
 
                     <X
                       className="easyleap-size-4 inner-theme-text"
                       onClick={() => {
-                        if (!addressDestination) {
+                        if (!starknetAddress) {
                           sharedState.setMode(InteractionMode.None);
                         } else {
                           sharedState.setMode(InteractionMode.Starknet);
@@ -489,7 +489,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                 </div>
               )}
 
-              {(addressSource || addressDestination) && (
+              {(evmAddress || starknetAddress) && (
                 <DialogTrigger className="easyleap-mt-8 easyleap-w-full md:easyleap-w-full">
                   <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-firaCode easyleap-font-semibold easyleap-w-full easyleap-justify-center [&_svg]:easyleap-pointer-events-auto my-active-button">
                     Done
