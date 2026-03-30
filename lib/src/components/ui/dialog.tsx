@@ -31,9 +31,10 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     closeClassName?: string;
+    closeStyle?: React.CSSProperties;
     onClickClose?: () => void;
   }
->(({ className, children, closeClassName, onClickClose, ...props }, ref) => (
+>(({ className, children, closeClassName, closeStyle, onClickClose, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -47,9 +48,10 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close
         className={cn(
-          "easyleap-absolute easyleap-right-4 easyleap-top-4 easyleap-rounded-sm easyleap-opacity-70 easyleap-ring-offset-black easyleap-transition-opacity hover:easyleap-opacity-100 focus:easyleap-outline-none focus:easyleap-ring-2 focus:easyleap-ring-[#0A0A0A] focus:easyleap-ring-offset-2 disabled:easyleap-pointer-events-none data-[state=open]:easyleap-bg-[#454545] data-[state=open]:easyleap-text-[#757575]",
+          "easyleap-absolute easyleap-right-4 easyleap-top-4 easyleap-rounded-sm easyleap-opacity-70 easyleap-ring-offset-black easyleap-transition-opacity hover:easyleap-opacity-100 focus:easyleap-outline-none focus:easyleap-ring-2 focus:easyleap-ring-[#0A0A0A] focus:easyleap-ring-offset-2 disabled:easyleap-pointer-events-none data-[state=open]:easyleap-bg-transparent data-[state=open]:easyleap-text-[#757575]",
           closeClassName
         )}
+        style={closeStyle}
         onClick={onClickClose}
       >
         <X className="easyleap-h-4 easyleap-w-4" />

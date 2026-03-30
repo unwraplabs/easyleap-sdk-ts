@@ -34,7 +34,10 @@ const preview: Preview = {
           connectors: [
             new WebWalletConnector(),
             new InjectedConnector({ options: { id: "argentX" } }),
-            new InjectedConnector({ options: { id: "braavos" } })
+            new InjectedConnector({ options: { id: "braavos" } }),
+            new InjectedConnector({
+              options: { id: "metamask", name: "MetaMask" }
+            })
           ]
         }}
         theme={easyleapConfig.theme}

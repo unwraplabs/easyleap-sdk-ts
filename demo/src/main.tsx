@@ -32,6 +32,9 @@ createRoot(document.getElementById("root")!).render(
           new WebWalletConnector(),
           new InjectedConnector({ options: { id: "argentX" } }),
           new InjectedConnector({ options: { id: "braavos" } }),
+          new InjectedConnector({
+            options: { id: "metamask", name: "MetaMask" }
+          }),
         ],
       }}
     >
