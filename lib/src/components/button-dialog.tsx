@@ -719,8 +719,11 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                     </DialogHeader>
 
                     <div
-                        className="easyleap-flex easyleap-w-full easyleap-flex-col easyleap-gap-3 easyleap-overflow-hidden easyleap-rounded-[10px] easyleap-p-0"
-                        style={{ border: tabSegmentBorder }}
+                        className="easyleap-flex easyleap-w-full easyleap-flex-col easyleap-gap-3 easyleap-overflow-hidden easyleap-rounded-[10px]"
+                        style={{
+                            borderRadius: tabRadius,
+                            boxShadow: `inset 0 0 0 1px ${cd.accent ?? "#B4A7D6"}`
+                        }}
                     >
                         <div className="easyleap-flex easyleap-w-full easyleap-items-stretch easyleap-gap-0">
                             <button
