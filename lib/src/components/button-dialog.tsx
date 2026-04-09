@@ -2,7 +2,7 @@ import {
   useConnect as useConnectSN,
   useDisconnect as useDisconnectSN
 } from "@starknet-react/core";
-import { X } from "lucide-react";
+import { Loader2, MailIcon, X } from "lucide-react";
 import React from "react";
 import {
   useConnect as useConnectWagmi,
@@ -41,6 +41,7 @@ import { cn, shortAddress } from "@lib/utils";
 // import ProgressBar from "./ui/progress-bar";
 
 import { ModeSwitcher, type ConnectButtonProps } from ".";
+import { usePrivyContext } from "@lib/contexts/PrivyContext";
 
 export const ButtonDialog: React.FC<ConnectButtonProps> = ({
   onConnectStarknet,
@@ -59,6 +60,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
 
   const { connector } = useConnectSN();
   const { connector: connectorEVM } = getAccount(evmConfig);
+  const { user, disconnectPrivy } = usePrivyContext();
 
   const theme = useTheme();
 
@@ -135,18 +137,57 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
 
   function SNWalletOptions() {
     const { connectors, connect } = useConnectSN();
+    const { disconnectAsync } = useDisconnectSN();
+    const { connectPrivy, user, disconnectPrivy, isLoadingWallet } = usePrivyContext();
 
     const uniqueConnectors = connectors.filter(
       (connector, index, self) =>
         index === self.findIndex((c) => c.name === connector.name)
     );
 
+    const handlePrivyConnect = async () => {
+      // Disconnect any existing Starknet wallet first
+      try {
+        await disconnectAsync();
+      } catch (e) {
+        // Ignore if not connected
+      }
+      await connectPrivy();
+      onConnectStarknet?.();
+    };
+
     return (
       <div className="easyleap-space-y-2.5">
+        {/* Email and Social Button */}
+        <button
+          onClick={handlePrivyConnect}
+          disabled={isLoadingWallet}
+          className={"easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-px-[15px] easyleap-py-[5px] my-button"}
+        >
+          {isLoadingWallet ? "Setting up wallet..." : "Email and Social"}
+          <div
+            className={cn(
+              "easyleap-rounded-full easyleap-border-2 easyleap-border-[#F4F4F4] easyleap-bg-transparent",
+              "easyleap-p-1.5"
+            )}
+          >
+            {isLoadingWallet ? (
+              <Loader2 className="easyleap-size-5 easyleap-animate-spin" />
+            ) : (
+              <MailIcon className="easyleap-size-5" />
+            )}
+          </div>
+        </button>
+
+        {/* Existing connectors */}
         {uniqueConnectors.map((connector) => (
           <button
             key={connector.id}
-            onClick={() => {
+            onClick={async () => {
+              // Disconnect Privy if connected
+              if (user) {
+                await disconnectPrivy();
+              }
               connect({ connector });
               onConnectStarknet?.();
             }}
@@ -380,24 +421,32 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
               ) : (
                 <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-2">
                   <p className="easyleap-text-xs easyleap-font-medium easyleap-text-[#8E8E8E]">
-                    Connected to {connector?.name}
+                    Connected to {user ? "Email and Social" : connector?.name}
                   </p>
                   <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-firaCode easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
                     <div className="easyleap-flex easyleap-items-center easyleap-justify-start easyleap-gap-3">
                       <span
                         className={cn("easyleap-rounded-full easyleap-p-1", {
-                          "easyleap-p-0": connector?.id === "argentX"
+                          "easyleap-p-0": connector?.id === "argentX" && !user
                         })}
                       >
-                        {getWalletIcon(connector?.id ?? "braavos")}
+                        {user ? (
+                          <MailIcon className="easyleap-size-5" />
+                        ) : (
+                          getWalletIcon(connector?.id ?? "braavos")
+                        )}
                       </span>
                       {shortAddress(starknetAddress, 8, 8)}
                     </div>
 
                     <X
                       className="easyleap-size-4 inner-theme-text"
-                      onClick={() => {
-                        disconnectSN();
+                      onClick={async () => {
+                        if (user) {
+                          await disconnectPrivy();
+                        } else {
+                          disconnectSN();
+                        }
                         onDisconnectStarknet?.();
                         // BRIDGE MODE - disconnecting SN no longer also disconnects EVM.
                         // Each wallet is independent.
