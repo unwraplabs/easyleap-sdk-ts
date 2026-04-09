@@ -2,7 +2,7 @@ import {
   Address,
   useSendTransaction as useSendTransactionSN,
 } from "@starknet-react/core";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Call } from "starknet";
 import {
   useSendTransaction as useSendTransactionEVM,
@@ -12,6 +12,9 @@ import { InteractionMode } from "../contexts/SharedState";
 import { useMode } from "./useMode";
 import { toast } from "./use-toast";
 import { logger } from "@lib/utils/logger";
+
+import { usePrivyContext } from "../contexts/PrivyContext";
+import { usePrivy } from "@privy-io/react-auth";
 
 export interface EvmTxParams {
   to: `0x${string}`;
@@ -46,6 +49,8 @@ function getSendTransactionCallback(
     value?: bigint;
     data?: `0x${string}`;
   }) => Promise<`0x${string}`>,
+  isPrivyWallet: boolean,
+  privySendTransaction: (calls: Call[]) => Promise<void>,
 ) {
   return async function sendTransaction(
     params: SendTransactionParams,
@@ -80,7 +85,11 @@ function getSendTransactionCallback(
         return;
       }
       try {
-        await snSendAsync(params.calls);
+        if (isPrivyWallet) {
+          await privySendTransaction(params.calls);
+        } else {
+          await snSendAsync(params.calls);
+        }
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-sn-error", e);
         console.error("EL::useSendTransaction::send-sn-error", e);
@@ -110,40 +119,171 @@ function getSendTransactionCallback(
 export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   const mode = useMode();
 
+  // Privy integration
+  const { privyWallet } = usePrivyContext();
+  const { getAccessToken } = usePrivy();
+  const [privyTxState, setPrivyTxState] = useState<{
+    isPending: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: Error | null;
+    data?: `0x${string}`;
+  }>({
+    isPending: false,
+    isSuccess: false,
+    isError: false,
+    error: null,
+    data: undefined,
+  });
+
+  // Check if using Privy wallet
+  const isPrivyWallet = useMemo(() => {
+    return !!privyWallet?.address;
+  }, [privyWallet?.address]);
+
+  // Function to send transaction via Privy API
+  const privySendTransaction = useCallback(
+    async (calls: Call[]) => {
+      if (!privyWallet) {
+        throw new Error("Privy wallet not connected");
+      }
+
+      setPrivyTxState({
+        isPending: true,
+        isSuccess: false,
+        isError: false,
+        error: null,
+        data: undefined,
+      });
+
+      try {
+        const userJwt = await getAccessToken();
+        if (!userJwt) {
+          throw new Error("Failed to get access token");
+        }
+
+        const response = await fetch("/api/privy/execute-transaction", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userJwt}`,
+          },
+          body: JSON.stringify({
+            walletId: privyWallet.walletId,
+            calls,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.error || "Failed to execute transaction");
+        }
+
+        const data = await response.json();
+        logger.verbose("EL::useSendTransaction::privyTxSuccess", data);
+
+        setPrivyTxState({
+          isPending: false,
+          isSuccess: true,
+          isError: false,
+          error: null,
+          data: data.transactionHash as `0x${string}`,
+        });
+      } catch (error: any) {
+        logger.verbose("EL::useSendTransaction::privyTxError", error);
+        setPrivyTxState({
+          isPending: false,
+          isSuccess: false,
+          isError: true,
+          error: error,
+          data: undefined,
+        });
+        throw error;
+      }
+    },
+    [privyWallet, getAccessToken],
+  );
+
+  // Reset Privy transaction state
+  const resetPrivyTx = useCallback(() => {
+    setPrivyTxState({
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+      data: undefined,
+    });
+  }, []);
+
   const isEVMMode = useMemo(() => {
     return mode === InteractionMode.EVM;
   }, [mode]);
 
+  // Initialize the StarkNet transaction hook (calls are passed at send time).
   const snOutput = useSendTransactionSN({});
+
+  // Initialize the EVM transaction hook.
   const evmOutput = useSendTransactionEVM();
 
+  // Create the callback function for sending transactions.
   const sendCallback = useCallback(
     getSendTransactionCallback(
       mode,
       snOutput.sendAsync,
       evmOutput.sendTransactionAsync,
+      isPrivyWallet,
+      privySendTransaction,
     ),
-    [mode, snOutput.sendAsync, evmOutput.sendTransactionAsync],
+    [mode, snOutput.sendAsync, evmOutput.sendTransactionAsync, isPrivyWallet, privySendTransaction],
   );
+
+  const activeIsSuccess = isEVMMode
+    ? evmOutput.isSuccess
+    : isPrivyWallet
+      ? privyTxState.isSuccess
+      : snOutput.isSuccess;
+
+  const activeIsError = isEVMMode
+    ? evmOutput.isError
+    : isPrivyWallet
+      ? privyTxState.isError
+      : snOutput.isError;
+
+  const activeError = isEVMMode
+    ? evmOutput.error
+    : isPrivyWallet
+      ? privyTxState.error
+      : snOutput.error;
+
+  const activeIsPending = isEVMMode
+    ? evmOutput.isPending
+    : isPrivyWallet
+      ? privyTxState.isPending
+      : snOutput.isPending;
+
+  const activeData: `0x${string}` | undefined = isEVMMode
+    ? evmOutput.data
+    : isPrivyWallet
+      ? privyTxState.data
+      : snOutput.data
+        ? (snOutput.data.transaction_hash as Address)
+        : undefined;
 
   return {
     send: sendCallback,
     sendAsync: sendCallback,
-    isPaused: isEVMMode ? evmOutput.isPaused : snOutput.isPaused,
-    isSuccess: isEVMMode ? evmOutput.isSuccess : snOutput.isSuccess,
-    isError: isEVMMode ? evmOutput.isError : snOutput.isError,
-    error: isEVMMode ? evmOutput.error : snOutput.error,
-    data: isEVMMode
-      ? evmOutput.data
-      : snOutput.data
-        ? (snOutput.data.transaction_hash as Address)
-        : undefined,
-    isPending: isEVMMode ? evmOutput.isPending : snOutput.isPending,
-    isIdle: isEVMMode ? evmOutput.isIdle : snOutput.isIdle,
+    isPaused: isEVMMode ? (evmOutput.isPaused ?? false) : (snOutput.isPaused ?? false),
+    isSuccess: activeIsSuccess,
+    isError: activeIsError,
+    error: activeError,
+    data: activeData,
+    isPending: activeIsPending,
+    isIdle: isEVMMode ? (evmOutput.isIdle ?? false) : (isPrivyWallet ? (!privyTxState.isPending && !privyTxState.isSuccess && !privyTxState.isError) : (snOutput.isIdle ?? false)),
     status: isEVMMode ? evmOutput.status : snOutput.status,
     reset: () => {
       evmOutput.reset();
       snOutput.reset();
+      resetPrivyTx();
     },
   };
 }

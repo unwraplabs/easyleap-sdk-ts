@@ -17,10 +17,12 @@ import {
   Config as WagmiConfig,
   WagmiProvider,
 } from "wagmi";
+import { PrivyProvider } from "@privy-io/react-auth";
 
 import { Toaster } from "@lib/components/ui/toaster";
 import { SharedStateProvider } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
+import { PrivyContextProvider } from "@lib/contexts/PrivyContext";
 
 export interface EasyleapConfig {
   wagmiConfig?: WagmiConfig;
@@ -110,21 +112,31 @@ export function EasyleapProvider(
     return props.queryClient || defaultQueryClient;
   }, [props.queryClient]);
 
+  // NOTE: you will have to use the env naming as per the app -> For next you will use NEXT_PUBLIC_PRIVY_APP_ID
+  const privyAppId =
+    typeof window !== "undefined"
+      ? import.meta.env.VITE_PRIVY_APP_ID || ""
+      : "";
+
   return (
     <SharedStateProvider>
       <ThemeProvider theme={props.theme}>
         <QueryClientProvider client={queryClient}>
-          <WagmiProvider config={wagmiConfig}>
-            <StarknetConfig
-              chains={starknetConfig.chains || [mainnet]}
-              provider={starknetConfig.provider}
-              explorer={starknetConfig.explorer}
-              connectors={starknetConfig?.connectors || []}
-            >
-              {props.children}
-              <Toaster />
-            </StarknetConfig>
-          </WagmiProvider>
+          <PrivyProvider appId={privyAppId}>
+            <PrivyContextProvider>
+              <WagmiProvider config={wagmiConfig}>
+                <StarknetConfig
+                  chains={starknetConfig.chains || [mainnet]}
+                  provider={starknetConfig.provider}
+                  explorer={starknetConfig.explorer}
+                  connectors={starknetConfig?.connectors || []}
+                >
+                  {props.children}
+                  <Toaster />
+                </StarknetConfig>
+              </WagmiProvider>
+            </PrivyContextProvider>
+          </PrivyProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </SharedStateProvider>

@@ -1,7 +1,7 @@
 import {
   useAccount as useAccountSn,
   useNetwork,
-  useSwitchChain
+  useSwitchChain,
 } from "@starknet-react/core";
 import { createConfig, http, switchChain as switchChainEVM } from "@wagmi/core";
 import { mainnet, sepolia } from "@wagmi/core/chains";
@@ -9,6 +9,12 @@ import { useEffect } from "react";
 import { num } from "starknet";
 import { useAccount as useAccountWagmi, useConfig } from "wagmi";
 import { InteractionMode, useSharedState } from "../contexts/SharedState";
+import { usePrivyContext } from "../contexts/PrivyContext";
+
+export enum Chains {
+  ETH_MAINNET = "ETH_MAINNET",
+  STARKNET = "STARKNET",
+}
 
 /** Return type of useAccount */
 export interface useAccountResult {
@@ -22,8 +28,8 @@ export const evmConfig = createConfig({
   chains: [mainnet, sepolia],
   transports: {
     [mainnet.id]: http(),
-    [sepolia.id]: http()
-  }
+    [sepolia.id]: http(),
+  },
 });
 
 /**
@@ -35,8 +41,9 @@ export const evmConfig = createConfig({
 export function useAccount(): useAccountResult {
   const config = useConfig();
   const { address: evmAddress, chainId: chainIdEVM } = useAccountWagmi();
-  const { address: starknetAddress, chainId: chainIdSN } = useAccountSn();
+  const { address: starknetAddressSN, chainId: chainIdSN } = useAccountSn();
   const { chain } = useNetwork();
+  const { privyWallet } = usePrivyContext();
   const sharedState = useSharedState();
 
   // EVM chain switching
@@ -45,17 +52,20 @@ export function useAccount(): useAccountResult {
     switchChainEVM(evmConfig, { chainId: config.chains[0].id as 1 | 11155111 });
   }
 
+  // Prioritize Privy wallet address if connected
+  const starknetAddress = privyWallet?.address
+    ? (privyWallet.address as `0x${string}`)
+    : starknetAddressSN;
+
   const result = useSwitchChain({
     params: {
-      chainId: num.getHexString(chain.id.toString())
-    }
+      chainId: num.getHexString(chain.id.toString()),
+    },
   });
 
   useEffect(() => {
-    if (starknetAddress) {
-      if (chainIdSN != chain.id) {
-        result.switchChain();
-      }
+    if (starknetAddress && chainIdSN != chain.id) {
+      result.switchChain();
     }
     if (result.error) console.error("switching", result.error);
   }, [starknetAddress, chainIdSN, chain]);
@@ -83,6 +93,6 @@ export function useAccount(): useAccountResult {
     evmAddress,
     starknetAddress,
     chainIdEVM,
-    chainIdSN
+    chainIdSN,
   };
 }

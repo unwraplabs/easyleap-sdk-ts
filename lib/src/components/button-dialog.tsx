@@ -3,7 +3,7 @@ import {
     useConnect as useConnectSN,
     useDisconnect as useDisconnectSN
 } from "@starknet-react/core";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { Loader2, MailIcon, X } from "lucide-react";
 import React from "react";
 import {
     useConnect as useConnectWagmi,
@@ -27,16 +27,9 @@ import { useMode } from "@lib/hooks/useMode";
 import { cn, shortAddress } from "@lib/utils";
 
 import { ModeSwitcher, type ConnectButtonProps } from ".";
+import { usePrivyContext } from "@lib/contexts/PrivyContext";
 
 type ChainFilter = "all" | "starknet" | "ethereum";
-
-function isMetaMaskSnConnector(id: string | undefined) {
-    return (id ?? "").toLowerCase() === "metamask";
-}
-
-function isMetaMaskEvmConnector(name: string | undefined) {
-    return (name ?? "").toLowerCase() === "metamask";
-}
 
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
@@ -75,7 +68,8 @@ const WalletConnectPanel: React.FC<{
     const { connectors: snConnectors, connect: connectSN } = useConnectSN();
     const { connectors: evmConnectors, connect: connectEVM } =
         useConnectWagmi();
-    const [metaMaskExpanded, setMetaMaskExpanded] = React.useState(false);
+    const { user, connectPrivy, disconnectPrivy, isLoadingWallet } =
+        usePrivyContext();
 
     const uniqueSn = React.useMemo(
         () =>
@@ -93,389 +87,226 @@ const WalletConnectPanel: React.FC<{
         [evmConnectors]
     );
 
-    const snMetaMask = uniqueSn.find((c) => isMetaMaskSnConnector(c.id));
-    const evmMetaMask = uniqueEvm.find((c) => isMetaMaskEvmConnector(c.name));
+    const showSn = chainFilter === "all" || chainFilter === "starknet";
+    const showEvm = chainFilter === "all" || chainFilter === "ethereum";
 
-    const showMultichainMetaMask =
-        chainFilter === "all" &&
-        Boolean(snMetaMask && evmMetaMask) &&
-        !starknetAddress &&
-        !evmAddress;
+    const walletLabel = (name: string) =>
+        name.toLowerCase().includes("wallet") ? name : `${name} wallet`;
 
-    const showSnMetaMaskRow =
-        Boolean(snMetaMask) &&
-        !starknetAddress &&
-        (chainFilter === "starknet" ||
-            (chainFilter === "all" && !showMultichainMetaMask));
-
-    const showEvmMetaMaskRow =
-        Boolean(evmMetaMask) &&
-        !evmAddress &&
-        (chainFilter === "ethereum" ||
-            (chainFilter === "all" && !showMultichainMetaMask));
-
-    const otherSn = uniqueSn.filter((c) => !isMetaMaskSnConnector(c.id));
-    const otherEvm = uniqueEvm.filter((c) => !isMetaMaskEvmConnector(c.name));
-
-    const showOtherSn =
-        !starknetAddress &&
-        (chainFilter === "starknet" || chainFilter === "all");
-    const showOtherEvm =
-        !evmAddress && (chainFilter === "ethereum" || chainFilter === "all");
-
-    React.useEffect(() => {
-        setMetaMaskExpanded(false);
-    }, [chainFilter]);
-
-    const rowBase: React.CSSProperties = {
+    const panelRowBase: React.CSSProperties = {
         border: cd.rowBorder,
         color: cd.rowTextColor,
         backgroundColor: "transparent"
     };
 
-    const subRow = (label: string, onClick: () => void) => (
+    const ConnectRow: React.FC<{
+        label: React.ReactNode;
+        icon: React.ReactNode;
+        onClick: () => void;
+        disabled?: boolean;
+    }> = ({ label, icon, onClick, disabled }) => (
         <button
-            key={label}
             type="button"
             onClick={onClick}
-            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-lg easyleap-px-3 easyleap-py-2.5 easyleap-text-left easyleap-text-sm easyleap-transition-colors"
-            style={{
-                ...rowBase,
-                marginTop: "6px",
-                backgroundColor:
-                    cd.tabInactiveBackground ?? "rgba(255,255,255,0.04)"
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                    cd.rowHoverBackground ?? "";
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor =
-                    cd.tabInactiveBackground ?? "rgba(255,255,255,0.04)";
-            }}
+            disabled={disabled}
+            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-text-xs easyleap-px-[15px] easyleap-py-[5px] my-button"
+            style={panelRowBase}
         >
-            <span>{label}</span>
-            <ChevronRight className="easyleap-size-4 easyleap-opacity-60" />
+            {label}
+            <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
+                {icon}
+            </span>
         </button>
     );
 
-    const walletLabel = (name: string) =>
-        name.toLowerCase().includes("wallet") ? name : `${name} wallet`;
+    return (
+        <div className="easyleap-flex easyleap-flex-col easyleap-gap-4">
+            {showSn && (
+                <div className="easyleap-mt-1 easyleap-w-full">
+                    <h5 className="easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
+                        Starknet Wallet
+                    </h5>
 
-    const rows: React.ReactNode[] = [];
+                    {!starknetAddress ? (
+                        <div className="easyleap-space-y-2.5">
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    await connectPrivy();
+                                    onConnectStarknet?.();
+                                }}
+                                disabled={isLoadingWallet}
+                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-px-[15px] easyleap-py-[5px] my-button"
+                                style={panelRowBase}
+                            >
+                                {isLoadingWallet
+                                    ? "Setting up wallet..."
+                                    : "Email and Social"}
+                                <span
+                                    className={cn(
+                                        "easyleap-rounded-full easyleap-border-2 easyleap-border-[#F4F4F4] easyleap-bg-transparent",
+                                        "easyleap-p-1.5"
+                                    )}
+                                >
+                                    {isLoadingWallet ? (
+                                        <Loader2 className="easyleap-size-5 easyleap-animate-spin" />
+                                    ) : (
+                                        <MailIcon className="easyleap-size-5" />
+                                    )}
+                                </span>
+                            </button>
 
-    if (starknetAddress) {
-        rows.push(
-            <div
-                key="connected-sn"
-                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3"
-                style={{
-                    ...rowBase,
-                    backgroundColor: cd.rowHoverBackground
-                }}
-            >
-                <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                    <span
-                        className={cn(
-                            "easyleap-flex easyleap-items-center easyleap-justify-center easyleap-rounded-full easyleap-p-1",
-                            {
-                                "easyleap-p-0":
-                                    starknetConnectorId === "argentX"
-                            }
-                        )}
-                    >
-                        {getWalletIcon(starknetConnectorId ?? "braavos")}
-                    </span>
-                    <div className="easyleap-flex easyleap-flex-col easyleap-gap-0.5">
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            {walletLabel(
-                                String(
-                                    starknetConnectorName ??
-                                        starknetConnectorId ??
-                                        "Starknet"
-                                )
-                            )}
-                        </span>
-                        <span
-                            className="easyleap-font-mono easyleap-text-xs"
-                            style={{ color: cd.mutedTextColor }}
-                        >
-                            {shortAddress(starknetAddress, 6, 6)}
-                        </span>
-                    </div>
+                            {uniqueSn.map((connector) => (
+                                <ConnectRow
+                                    key={connector.id}
+                                    label={walletLabel(connector.name)}
+                                    icon={getWalletIcon(connector.id)}
+                                    onClick={async () => {
+                                        if (user) {
+                                            await disconnectPrivy();
+                                        }
+                                        connectSN({ connector });
+                                        onConnectStarknet?.();
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-2">
+                            <p className="easyleap-text-xs easyleap-font-medium easyleap-text-[#8E8E8E]">
+                                Connected to{" "}
+                                {user
+                                    ? "Email and Social"
+                                    : starknetConnectorName ??
+                                      starknetConnectorId ??
+                                      "Starknet"}
+                            </p>
+
+                            <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-firaCode easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
+                                <div className="easyleap-flex easyleap-items-center easyleap-justify-start easyleap-gap-3">
+                                    <span
+                                        className={cn(
+                                            "easyleap-rounded-full easyleap-p-1",
+                                            {
+                                                "easyleap-p-0":
+                                                    starknetConnectorId ===
+                                                        "argentX" && !user
+                                            }
+                                        )}
+                                    >
+                                        {user ? (
+                                            <MailIcon className="easyleap-size-5" />
+                                        ) : (
+                                            getWalletIcon(
+                                                starknetConnectorId ?? "braavos"
+                                            )
+                                        )}
+                                    </span>
+                                    {shortAddress(starknetAddress, 8, 8)}
+                                </div>
+
+                                <X
+                                    className="easyleap-size-4 inner-theme-text"
+                                    onClick={async () => {
+                                        if (user) {
+                                            await disconnectPrivy();
+                                        } else {
+                                            disconnectSN();
+                                        }
+                                        onDisconnectStarknet?.();
+                                    }}
+                                />
+                            </Button>
+                        </div>
+                    )}
                 </div>
-                <button
-                    type="button"
-                    aria-label="Disconnect Starknet"
-                    className="easyleap-rounded-md easyleap-p-1 easyleap-transition-opacity hover:easyleap-opacity-80"
-                    style={{ color: cd.mutedTextColor }}
-                    onClick={() => {
-                        disconnectSN();
-                        onDisconnectStarknet?.();
-                    }}
-                >
-                    <X className="easyleap-size-4" />
-                </button>
-            </div>
-        );
-    }
+            )}
 
-    if (evmAddress) {
-        rows.push(
-            <div
-                key="connected-evm"
-                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3"
-                style={{
-                    ...rowBase,
-                    backgroundColor: cd.rowHoverBackground
-                }}
-            >
-                <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                    <span className="easyleap-flex easyleap-items-center easyleap-rounded-full easyleap-p-1">
-                        {getWalletIcon(
-                            (evmConnectorName ?? "metamask").toLowerCase()
-                        )}
-                    </span>
-                    <div className="easyleap-flex easyleap-flex-col easyleap-gap-0.5">
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            {walletLabel(String(evmConnectorName ?? "EVM"))}
-                        </span>
-                        <span
-                            className="easyleap-font-mono easyleap-text-xs"
-                            style={{ color: cd.mutedTextColor }}
-                        >
-                            {shortAddress(evmAddress, 6, 6)}
-                        </span>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    aria-label="Disconnect EVM"
-                    className="easyleap-rounded-md easyleap-p-1 easyleap-transition-opacity hover:easyleap-opacity-80"
-                    style={{ color: cd.mutedTextColor }}
-                    onClick={() => {
-                        onDisconnectEvmSideEffects();
-                        disconnectWagmi();
-                        onDisconnectEVM?.();
-                    }}
-                >
-                    <X className="easyleap-size-4" />
-                </button>
-            </div>
-        );
-    }
+            {showEvm && (
+                <div className="easyleap-mt-1 easyleap-w-full">
+                    <h5 className="easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
+                        EVM Wallet
+                    </h5>
 
-    if (showMultichainMetaMask && snMetaMask && evmMetaMask) {
-        rows.push(
-            <div key="mm-multi" className="easyleap-w-full">
-                <button
-                    type="button"
-                    onClick={() => setMetaMaskExpanded((e) => !e)}
-                    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3 easyleap-text-left easyleap-transition-colors"
-                    style={rowBase}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                            cd.rowHoverBackground ?? "";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                        <Icons.metamask className="easyleap-size-8 easyleap-shrink-0" />
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            Metamask wallet
-                        </span>
-                    </div>
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-2">
-                        <span
-                            className="easyleap-inline-flex easyleap-items-center easyleap-gap-1.5 easyleap-rounded-full easyleap-px-2 easyleap-py-0.5 easyleap-text-[11px] easyleap-font-medium"
+                    {!evmAddress ? (
+                        <div className="easyleap-space-y-2.5">
+                            {uniqueEvm.map((connector) => (
+                                <ConnectRow
+                                    key={connector.name}
+                                    label={walletLabel(connector.name)}
+                                    icon={getWalletIcon(
+                                        connector.name.toLowerCase()
+                                    )}
+                                    onClick={() => {
+                                        connectEVM({ connector });
+                                        onConnectEVM?.();
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div
+                            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3"
                             style={{
-                                color: cd.mutedTextColor,
-                                border: cd.rowBorder
+                                ...panelRowBase,
+                                backgroundColor: cd.rowHoverBackground
                             }}
                         >
-                            <span
-                                className="easyleap-size-1.5 easyleap-rounded-full"
-                                style={{
-                                    backgroundColor: cd.accent ?? "#4F8FFF"
+                            <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
+                                <span className="easyleap-flex easyleap-items-center easyleap-rounded-full easyleap-p-1">
+                                    {getWalletIcon(
+                                        (evmConnectorName ?? "metamask").toLowerCase()
+                                    )}
+                                </span>
+                                <div className="easyleap-flex easyleap-flex-col easyleap-gap-0.5">
+                                    <span className="easyleap-text-sm easyleap-font-medium">
+                                        {walletLabel(
+                                            String(evmConnectorName ?? "EVM")
+                                        )}
+                                    </span>
+                                    <span
+                                        className="easyleap-font-mono easyleap-text-xs"
+                                        style={{ color: cd.mutedTextColor }}
+                                    >
+                                        {shortAddress(evmAddress, 6, 6)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                aria-label="Disconnect EVM"
+                                className="easyleap-rounded-md easyleap-p-1 easyleap-transition-opacity hover:easyleap-opacity-80"
+                                style={{ color: cd.mutedTextColor }}
+                                onClick={() => {
+                                    onDisconnectEvmSideEffects();
+                                    disconnectWagmi();
+                                    onDisconnectEVM?.();
                                 }}
-                            />
-                            Multichain
-                        </span>
-                        <ChevronDown
-                            className={cn(
-                                "easyleap-size-4 easyleap-transition-transform easyleap-opacity-70",
-                                metaMaskExpanded && "easyleap-rotate-180"
-                            )}
-                        />
-                    </div>
-                </button>
-                {metaMaskExpanded && (
-                    <div className="easyleap-pl-1 easyleap-pr-1">
-                        {subRow("Starknet", () => {
-                            connectSN({ connector: snMetaMask });
-                            onConnectStarknet?.();
-                            setMetaMaskExpanded(false);
-                        })}
-                        {subRow("Ethereum", () => {
-                            connectEVM({ connector: evmMetaMask });
-                            onConnectEVM?.();
-                            setMetaMaskExpanded(false);
-                        })}
-                    </div>
-                )}
-            </div>
-        );
-    } else {
-        if (showSnMetaMaskRow && snMetaMask) {
-            rows.push(
-                <button
-                    key="mm-sn"
-                    type="button"
-                    onClick={() => {
-                        connectSN({ connector: snMetaMask });
-                        onConnectStarknet?.();
-                    }}
-                    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3 easyleap-text-left easyleap-transition-colors"
-                    style={rowBase}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                            cd.rowHoverBackground ?? "";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                            >
+                                <X className="easyleap-size-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {showSn && uniqueSn.length === 0 && !starknetAddress && (
+                <p
+                    className="easyleap-py-2 easyleap-text-center easyleap-text-sm"
+                    style={{ color: cd.mutedTextColor }}
                 >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                        <Icons.metamask className="easyleap-size-8 easyleap-shrink-0" />
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            Metamask wallet
-                        </span>
-                    </div>
-                    <ChevronRight className="easyleap-size-4 easyleap-opacity-60" />
-                </button>
-            );
-        }
-
-        if (showEvmMetaMaskRow && evmMetaMask) {
-            rows.push(
-                <button
-                    key="mm-evm"
-                    type="button"
-                    onClick={() => {
-                        connectEVM({ connector: evmMetaMask });
-                        onConnectEVM?.();
-                    }}
-                    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3 easyleap-text-left easyleap-transition-colors"
-                    style={rowBase}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                            cd.rowHoverBackground ?? "";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    No Starknet wallets available.
+                </p>
+            )}
+            {showEvm && uniqueEvm.length === 0 && !evmAddress && (
+                <p
+                    className="easyleap-py-2 easyleap-text-center easyleap-text-sm"
+                    style={{ color: cd.mutedTextColor }}
                 >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                        <Icons.metamask className="easyleap-size-8 easyleap-shrink-0" />
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            Metamask wallet
-                        </span>
-                    </div>
-                    <ChevronRight className="easyleap-size-4 easyleap-opacity-60" />
-                </button>
-            );
-        }
-    }
-
-    if (showOtherSn) {
-        for (const c of otherSn) {
-            rows.push(
-                <button
-                    key={`sn-${c.id}`}
-                    type="button"
-                    onClick={() => {
-                        connectSN({ connector: c });
-                        onConnectStarknet?.();
-                    }}
-                    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3 easyleap-text-left easyleap-transition-colors"
-                    style={rowBase}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                            cd.rowHoverBackground ?? "";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                        <span
-                            className={cn(
-                                "easyleap-flex easyleap-size-8 easyleap-items-center easyleap-justify-center easyleap-shrink-0",
-                                { "easyleap-p-0": c.id === "argentX" }
-                            )}
-                        >
-                            {getWalletIcon(c.id)}
-                        </span>
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            {walletLabel(c.name)}
-                        </span>
-                    </div>
-                    <ChevronRight className="easyleap-size-4 easyleap-opacity-60" />
-                </button>
-            );
-        }
-    }
-
-    if (showOtherEvm) {
-        for (const c of otherEvm) {
-            rows.push(
-                <button
-                    key={`evm-${c.name}`}
-                    type="button"
-                    onClick={() => {
-                        connectEVM({ connector: c });
-                        onConnectEVM?.();
-                    }}
-                    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-xl easyleap-px-3 easyleap-py-3 easyleap-text-left easyleap-transition-colors"
-                    style={rowBase}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                            cd.rowHoverBackground ?? "";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
-                        <span className="easyleap-flex easyleap-size-8 easyleap-items-center easyleap-justify-center easyleap-shrink-0 easyleap-rounded-full easyleap-p-1">
-                            {getWalletIcon(c.name.toLowerCase())}
-                        </span>
-                        <span className="easyleap-text-sm easyleap-font-medium">
-                            {walletLabel(c.name)}
-                        </span>
-                    </div>
-                    <ChevronRight className="easyleap-size-4 easyleap-opacity-60" />
-                </button>
-            );
-        }
-    }
-
-    if (rows.length === 0) {
-        return (
-            <p
-                className="easyleap-py-6 easyleap-text-center easyleap-text-sm"
-                style={{ color: cd.mutedTextColor }}
-            >
-                No wallets available for this network.
-            </p>
-        );
-    }
-
-    return (
-        <div className="easyleap-flex easyleap-max-h-[min(60vh,420px)] easyleap-flex-col easyleap-gap-2 easyleap-overflow-y-auto easyleap-pr-1">
-            {rows}
+                    No EVM wallets available.
+                </p>
+            )}
         </div>
     );
 };
