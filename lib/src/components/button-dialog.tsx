@@ -34,6 +34,7 @@ type ChainFilter = "all" | "starknet" | "ethereum";
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
     chainFilter: ChainFilter;
+    enableEvmMode: boolean;
     cd: NonNullable<ReturnType<typeof useTheme>["connectDialog"]>;
     onConnectStarknet?: () => void;
     onConnectEVM?: () => void;
@@ -50,6 +51,7 @@ const WalletConnectPanel: React.FC<{
     getWalletIcon: (walletId: string) => React.ReactNode;
 }> = ({
     chainFilter,
+    enableEvmMode,
     cd,
     onConnectStarknet,
     onConnectEVM,
@@ -65,7 +67,11 @@ const WalletConnectPanel: React.FC<{
     onDisconnectEvmSideEffects,
     getWalletIcon
 }) => {
-    const { connectors: snConnectors, connect: connectSN } = useConnectSN();
+    const {
+        connectors: snConnectors,
+        connect: connectSN,
+        connectAsync: connectSNAsync
+    } = useConnectSN();
     const { connectors: evmConnectors, connect: connectEVM } =
         useConnectWagmi();
     const { user, connectPrivy, disconnectPrivy, isLoadingWallet } =
@@ -88,7 +94,8 @@ const WalletConnectPanel: React.FC<{
     );
 
     const showSn = chainFilter === "all" || chainFilter === "starknet";
-    const showEvm = chainFilter === "all" || chainFilter === "ethereum";
+    const showEvm =
+        enableEvmMode && (chainFilter === "all" || chainFilter === "ethereum");
 
     const walletLabel = (name: string) =>
         name.toLowerCase().includes("wallet") ? name : `${name} wallet`;
@@ -123,7 +130,7 @@ const WalletConnectPanel: React.FC<{
         <div className="easyleap-flex easyleap-flex-col easyleap-gap-4">
             {showSn && (
                 <div className="easyleap-mt-1 easyleap-w-full">
-                    <h5 className="easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
+                    <h5 className="easyleap-text-center easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
                         Starknet Wallet
                     </h5>
 
@@ -165,7 +172,21 @@ const WalletConnectPanel: React.FC<{
                                         if (user) {
                                             await disconnectPrivy();
                                         }
-                                        connectSN({ connector });
+                                            // Cartridge Controller sometimes fails silently; use async connect to capture errors.
+                                            try {
+                                                if (connectSNAsync) {
+                                                    await connectSNAsync({
+                                                        connector
+                                                    } as any);
+                                                } else {
+                                                    connectSN({ connector } as any);
+                                                }
+                                            } catch (err: any) {
+                                                console.error(
+                                                    "Failed to connect Starknet wallet:",
+                                                    err
+                                                );
+                                            }
                                         onConnectStarknet?.();
                                     }}
                                 />
@@ -177,9 +198,9 @@ const WalletConnectPanel: React.FC<{
                                 Connected to{" "}
                                 {user
                                     ? "Email and Social"
-                                    : starknetConnectorName ??
+                                    : (starknetConnectorName ??
                                       starknetConnectorId ??
-                                      "Starknet"}
+                                      "Starknet")}
                             </p>
 
                             <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-firaCode easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
@@ -255,7 +276,9 @@ const WalletConnectPanel: React.FC<{
                             <div className="easyleap-flex easyleap-items-center easyleap-gap-3">
                                 <span className="easyleap-flex easyleap-items-center easyleap-rounded-full easyleap-p-1">
                                     {getWalletIcon(
-                                        (evmConnectorName ?? "metamask").toLowerCase()
+                                        (
+                                            evmConnectorName ?? "metamask"
+                                        ).toLowerCase()
                                     )}
                                 </span>
                                 <div className="easyleap-flex easyleap-flex-col easyleap-gap-0.5">
@@ -332,6 +355,14 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     const theme = useTheme();
     const cd = theme.connectDialog!;
     const [chainFilter, setChainFilter] = React.useState<ChainFilter>("all");
+    const { config } = usePrivyContext();
+    const enableEvmMode = config?.ui?.enableEvmMode ?? true;
+
+    React.useEffect(() => {
+        if (!enableEvmMode && chainFilter !== "starknet") {
+            setChainFilter("starknet");
+        }
+    }, [enableEvmMode, chainFilter]);
 
     const walletIconMap: Record<
         string,
@@ -527,7 +558,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                         </div>
                     </DialogTrigger>
 
-                    <ModeSwitcher />
+                    {enableEvmMode && <ModeSwitcher />}
                 </div>
 
                 <DialogContent
@@ -549,64 +580,67 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div
-                        className="easyleap-flex easyleap-w-full easyleap-flex-col easyleap-gap-3 easyleap-overflow-hidden easyleap-rounded-[10px]"
-                        style={{
-                            borderRadius: tabRadius,
-                            boxShadow: `inset 0 0 0 1px ${cd.accent ?? "#B4A7D6"}`
-                        }}
-                    >
-                        <div className="easyleap-flex easyleap-w-full easyleap-items-stretch easyleap-gap-0">
-                            <button
-                                type="button"
-                                onClick={() => setChainFilter("all")}
-                                className="easyleap-min-w-0 easyleap-flex-1"
-                                style={{
-                                    ...tabBtn(chainFilter === "all"),
-                                    borderTopLeftRadius: tabRadius,
-                                    borderBottomLeftRadius: tabRadius,
-                                    borderTopRightRadius: 0,
-                                    borderBottomRightRadius: 0,
-                                    borderRight: tabSegmentBorder
-                                }}
-                            >
-                                All chains
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Starknet"
-                                onClick={() => setChainFilter("starknet")}
-                                className="easyleap-flex easyleap-min-h-[40px] easyleap-min-w-[56px] easyleap-items-center easyleap-justify-center easyleap-shrink-0"
-                                style={{
-                                    ...tabBtn(chainFilter === "starknet"),
-                                    padding: "8px",
-                                    borderRadius: 0,
-                                    borderRight: tabSegmentBorder
-                                }}
-                            >
-                                <Icons.starknetLogo className="easyleap-size-6" />
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Ethereum"
-                                onClick={() => setChainFilter("ethereum")}
-                                className="easyleap-flex easyleap-min-h-[40px] easyleap-min-w-[56px] easyleap-items-center easyleap-justify-center easyleap-shrink-0"
-                                style={{
-                                    ...tabBtn(chainFilter === "ethereum"),
-                                    padding: "8px",
-                                    borderTopLeftRadius: 0,
-                                    borderBottomLeftRadius: 0,
-                                    borderTopRightRadius: tabRadius,
-                                    borderBottomRightRadius: tabRadius
-                                }}
-                            >
-                                <Icons.ethereumLogo className="easyleap-size-6" />
-                            </button>
+                    {enableEvmMode && (
+                        <div
+                            className="easyleap-flex easyleap-w-full easyleap-flex-col easyleap-gap-3 easyleap-overflow-hidden easyleap-rounded-[10px]"
+                            style={{
+                                borderRadius: tabRadius,
+                                boxShadow: `inset 0 0 0 1px ${cd.accent ?? "#B4A7D6"}`
+                            }}
+                        >
+                            <div className="easyleap-flex easyleap-w-full easyleap-items-stretch easyleap-gap-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setChainFilter("all")}
+                                    className="easyleap-min-w-0 easyleap-flex-1"
+                                    style={{
+                                        ...tabBtn(chainFilter === "all"),
+                                        borderTopLeftRadius: tabRadius,
+                                        borderBottomLeftRadius: tabRadius,
+                                        borderTopRightRadius: 0,
+                                        borderBottomRightRadius: 0,
+                                        borderRight: tabSegmentBorder
+                                    }}
+                                >
+                                    All chains
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Starknet"
+                                    onClick={() => setChainFilter("starknet")}
+                                    className="easyleap-flex easyleap-min-h-[40px] easyleap-min-w-[56px] easyleap-items-center easyleap-justify-center easyleap-shrink-0"
+                                    style={{
+                                        ...tabBtn(chainFilter === "starknet"),
+                                        padding: "8px",
+                                        borderRadius: 0,
+                                        borderRight: tabSegmentBorder
+                                    }}
+                                >
+                                    <Icons.starknetLogo className="easyleap-size-6" />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Ethereum"
+                                    onClick={() => setChainFilter("ethereum")}
+                                    className="easyleap-flex easyleap-min-h-[40px] easyleap-min-w-[56px] easyleap-items-center easyleap-justify-center easyleap-shrink-0"
+                                    style={{
+                                        ...tabBtn(chainFilter === "ethereum"),
+                                        padding: "8px",
+                                        borderTopLeftRadius: 0,
+                                        borderBottomLeftRadius: 0,
+                                        borderTopRightRadius: tabRadius,
+                                        borderBottomRightRadius: tabRadius
+                                    }}
+                                >
+                                    <Icons.ethereumLogo className="easyleap-size-6" />
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <WalletConnectPanel
                         chainFilter={chainFilter}
+                        enableEvmMode={enableEvmMode}
                         cd={cd}
                         onConnectStarknet={onConnectStarknet}
                         onConnectEVM={onConnectEVM}

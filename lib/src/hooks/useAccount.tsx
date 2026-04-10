@@ -43,8 +43,9 @@ export function useAccount(): useAccountResult {
   const { address: evmAddress, chainId: chainIdEVM } = useAccountWagmi();
   const { address: starknetAddressSN, chainId: chainIdSN } = useAccountSn();
   const { chain } = useNetwork();
-  const { privyWallet } = usePrivyContext();
+  const { privyWallet, config: privyConfig } = usePrivyContext();
   const sharedState = useSharedState();
+  const enableEvmMode = privyConfig?.ui?.enableEvmMode ?? true;
 
   // EVM chain switching
   if (evmAddress && chainIdEVM != config.chains[0].id) {
@@ -76,6 +77,15 @@ export function useAccount(): useAccountResult {
     // - Only EVM wallet → EVM mode
     // - Both connected → Starknet mode (unless manually switched to EVM)
     // - Neither → None mode
+    if (!enableEvmMode) {
+      if (starknetAddress) {
+        sharedState.setMode(InteractionMode.Starknet);
+      } else {
+        sharedState.setMode(InteractionMode.None);
+      }
+      return;
+    }
+
     if (evmAddress && starknetAddress) {
       if (!sharedState.isModeSwitchedManually) {
         sharedState.setMode(InteractionMode.Starknet);
@@ -87,7 +97,7 @@ export function useAccount(): useAccountResult {
     } else {
       sharedState.setMode(InteractionMode.None);
     }
-  }, [evmAddress, starknetAddress]);
+  }, [enableEvmMode, evmAddress, starknetAddress]);
 
   return {
     evmAddress,

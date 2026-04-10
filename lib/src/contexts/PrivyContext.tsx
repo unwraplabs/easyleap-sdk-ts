@@ -16,6 +16,14 @@ const log = (message: string, data?: any) => {
   }
 };
 
+export interface PrivyProviderConfig {
+  rpcUrl: string;
+  network: "mainnet" | "sepolia";
+  ui?: {
+    enableEvmMode?: boolean;
+  };
+}
+
 export interface PrivyWalletData {
   walletId: string;
   address: string;
@@ -30,13 +38,15 @@ export interface PrivyContextValue {
   connectPrivy: () => Promise<void>;
   disconnectPrivy: () => Promise<void>;
   user: any;
+  config?: PrivyProviderConfig;
 }
 
 const PrivyContext = createContext<PrivyContextValue | null>(null);
 
-export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const PrivyContextProvider: React.FC<{
+  children: React.ReactNode;
+  config?: PrivyProviderConfig;
+}> = ({ children, config }) => {
   const { login } = useLogin();
   const { logout } = useLogout();
   const { user } = useUser();
@@ -130,9 +140,15 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
       setPrivyWallet(wallet);
 
       // Initialize Starkzap
+      if (!config?.rpcUrl) {
+        throw new Error(
+          "Missing rpcUrl for Privy/StarkZap. Provide `starkzap.rpcUrl` to EasyleapProvider or set NEXT_PUBLIC_RPC_URL.",
+        );
+      }
+
       const sdk = new StarkZap({
-        network: "mainnet",
-        rpcUrl: import.meta.env.VITE_RPC_URL,
+        network: config.network ?? "mainnet",
+        rpcUrl: config.rpcUrl,
         paymaster: {
           nodeUrl: `/api/paymaster`,
         },
@@ -154,10 +170,15 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
               };
             }
 
+            const serverUrl =
+              typeof window !== "undefined"
+                ? `${window.location.origin}/api/wallet/sign`
+                : `/api/wallet/sign`;
+
             return {
               walletId: wallet.walletId,
               publicKey: wallet.publicKey,
-              serverUrl: `/api/wallet/sign`,
+              serverUrl,
             };
           },
         },
@@ -251,6 +272,7 @@ export const PrivyContextProvider: React.FC<{ children: React.ReactNode }> = ({
     connectPrivy,
     disconnectPrivy,
     user,
+    config,
   };
 
   return (
