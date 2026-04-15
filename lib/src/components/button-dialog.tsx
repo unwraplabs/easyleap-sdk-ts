@@ -148,7 +148,7 @@ const WalletConnectPanel: React.FC<{
                             >
                                 {isLoadingWallet
                                     ? "Setting up wallet..."
-                                    : "Email and Social"}
+                                    : "Email and Google"}
                                 <span
                                     className={cn(
                                         "easyleap-rounded-full easyleap-border-2 easyleap-border-[#F4F4F4] easyleap-bg-transparent",
@@ -197,7 +197,7 @@ const WalletConnectPanel: React.FC<{
                             <p className="easyleap-text-xs easyleap-font-medium easyleap-text-[#8E8E8E]">
                                 Connected to{" "}
                                 {user
-                                    ? "Email and Social"
+                                    ? "Email and Google"
                                     : (starknetConnectorName ??
                                       starknetConnectorId ??
                                       "Starknet")}

@@ -18,6 +18,7 @@ import {
     WagmiProvider
 } from "wagmi";
 import { PrivyProvider } from "@privy-io/react-auth";
+import type { PrivyClientConfig } from "@privy-io/react-auth";
 
 import { Toaster } from "@lib/components/ui/toaster";
 import { SharedStateProvider } from "@lib/contexts/SharedState";
@@ -36,6 +37,11 @@ export interface EasyleapConfig {
      * If omitted, the provider will attempt to resolve it from env.
      */
     privyAppId?: string;
+    /**
+     * Optional Privy React SDK config passed to `@privy-io/react-auth`.
+     * Useful for controlling available login methods (e.g. Google/email only).
+     */
+    privyConfig?: PrivyClientConfig;
     /**
      * StarkZap config used by the SDK’s Privy/Starknet embedded wallet flow.
      * If omitted, it will be resolved from env and sensible defaults.
@@ -146,7 +152,7 @@ export function EasyleapProvider(
         <SharedStateProvider>
             <ThemeProvider theme={props.theme}>
                 <QueryClientProvider client={queryClient}>
-                    <PrivyProvider appId={privyAppId}>
+                    <PrivyProvider appId={privyAppId} config={props.privyConfig}>
                         <PrivyContextProvider
                             config={{
                                 rpcUrl:

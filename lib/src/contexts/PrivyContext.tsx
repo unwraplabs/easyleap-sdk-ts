@@ -242,7 +242,7 @@ export const PrivyContextProvider: React.FC<{
 
   const connectPrivy = async () => {
     try {
-      login();
+      login({ loginMethods: ["google", "email"] });
     } catch (error) {
       console.error("Failed to login with Privy:", error);
       toast({
