@@ -1191,6 +1191,77 @@ export const Icons = {
     </svg>
   ),
 
+  // additional starknet wallet icons (lightweight, brand-distinct)
+  cartridge: (props: LucideProps) => (
+    <svg
+      {...props}
+      width="18"
+      height="18"
+      viewBox="0 0 196.3 173"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill="currentColor"
+        d="M68.5,71.8h63.6v-16.4h-63.6c0,1.6,0,16.6,0,16.4Z"
+      />
+      <path
+        fill="currentColor"
+        d="M175.9,38.7l-38.9-16.4c-2.6-1.2-5.4-1.9-8.2-2h-57.1c-2.8,0-5.6.8-8.2,2l-38.9,16.4c-3.8,2-6.2,5.9-6.1,10.2v65.6c0,2.1,0,4.1,2.1,6.1l12.3,12.3c2,2.1,3.6,2.1,6.1,2.1h28.2c0,1.8,0,16.5,0,16.4h66.6v-16.4h-66.5v-16.4h-30.2c-1.1,0-2-.9-2-2,0,0,0,0,0,0V38.7c0-1.1.9-2,2-2h126.7c1.1,0,2,.8,2,1.9,0,0,0,0,0,0v77.8c0,1.1-.8,2-1.9,2.1,0,0,0,0-.1,0h-29.9v16.4h27.9c2.6,0,4.1,0,6.1-2.1l12.3-12.3c2-2,2-4.1,2-6.1V48.9c0-4.3-2.3-8.3-6.1-10.2Z"
+      />
+    </svg>
+  ),
+  xverse: (props: LucideProps) => (
+    <svg
+      {...props}
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="9" cy="9" r="9" fill="#111827" />
+      <path
+        d="M5.2 5.2L12.8 12.8M12.8 5.2L5.2 12.8"
+        stroke="#F9FAFB"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
+  okxwallet: (props: LucideProps) => (
+    <svg
+      {...props}
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="9" cy="9" r="9" fill="#0A0A0A" />
+      <rect x="5.1" y="5.1" width="3.2" height="3.2" rx="0.6" fill="#FFFFFF" />
+      <rect x="9.7" y="5.1" width="3.2" height="3.2" rx="0.6" fill="#FFFFFF" />
+      <rect x="5.1" y="9.7" width="3.2" height="3.2" rx="0.6" fill="#FFFFFF" />
+      <rect x="9.7" y="9.7" width="3.2" height="3.2" rx="0.6" fill="#FFFFFF" />
+    </svg>
+  ),
+  fordefi: (props: LucideProps) => (
+    <svg
+      {...props}
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="9" cy="9" r="9" fill="#0B1220" />
+      <path
+        d="M6 5.2H12V6.9H7.9V8.3H11.2V9.9H7.9V12.8H6V5.2Z"
+        fill="#E6E9FF"
+      />
+    </svg>
+  ),
+
   // evm wallet icons
   metamask: (props: LucideProps) => (
     <svg

@@ -74,8 +74,12 @@ const WalletConnectPanel: React.FC<{
     } = useConnectSN();
     const { connectors: evmConnectors, connect: connectEVM } =
         useConnectWagmi();
-    const { user, connectPrivy, disconnectPrivy, isLoadingWallet } =
+    const { user, privyWallet, connectPrivy, disconnectPrivy, isLoadingWallet } =
         usePrivyContext();
+
+    const isPrivyConnected = React.useMemo(() => {
+        return !!user || !!privyWallet?.address;
+    }, [user, privyWallet?.address]);
 
     const uniqueSn = React.useMemo(
         () =>
@@ -169,7 +173,7 @@ const WalletConnectPanel: React.FC<{
                                     label={walletLabel(connector.name)}
                                     icon={getWalletIcon(connector.id)}
                                     onClick={async () => {
-                                        if (user) {
+                                        if (isPrivyConnected) {
                                             await disconnectPrivy();
                                         }
                                             // Cartridge Controller sometimes fails silently; use async connect to capture errors.
@@ -196,7 +200,7 @@ const WalletConnectPanel: React.FC<{
                         <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-2">
                             <p className="easyleap-text-xs easyleap-font-medium easyleap-text-[#8E8E8E]">
                                 Connected to{" "}
-                                {user
+                                {isPrivyConnected
                                     ? "Email and Google"
                                     : (starknetConnectorName ??
                                       starknetConnectorId ??
@@ -215,7 +219,7 @@ const WalletConnectPanel: React.FC<{
                                             }
                                         )}
                                     >
-                                        {user ? (
+                                        {isPrivyConnected ? (
                                             <MailIcon className="easyleap-size-5" />
                                         ) : (
                                             getWalletIcon(
@@ -229,7 +233,7 @@ const WalletConnectPanel: React.FC<{
                                 <X
                                     className="easyleap-size-4 inner-theme-text"
                                     onClick={async () => {
-                                        if (user) {
+                                        if (isPrivyConnected) {
                                             await disconnectPrivy();
                                         } else {
                                             disconnectSN();
@@ -355,8 +359,11 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     const theme = useTheme();
     const cd = theme.connectDialog!;
     const [chainFilter, setChainFilter] = React.useState<ChainFilter>("all");
-    const { config } = usePrivyContext();
+    const { config, user, privyWallet } = usePrivyContext();
     const enableEvmMode = config?.ui?.enableEvmMode ?? true;
+    const isPrivyConnected = React.useMemo(() => {
+        return !!user || !!privyWallet?.address;
+    }, [user, privyWallet?.address]);
 
     React.useEffect(() => {
         if (!enableEvmMode && chainFilter !== "starknet") {
@@ -369,8 +376,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         { Icon: React.ElementType; size?: string }
     > = {
         braavos: { Icon: Icons.braavos, size: "easyleap-size-5" },
-        argentX: { Icon: Icons.argentX, size: "easyleap-size-15" },
-        argentWebWallet: { Icon: Icons.wallet, size: "easyleap-size-5" },
+        argentx: { Icon: Icons.argentX, size: "easyleap-size-15" },
+        argentwebwallet: { Icon: Icons.wallet, size: "easyleap-size-5" },
         keplr: { Icon: Icons.keplr, size: "easyleap-size-5" },
         "argent-mobile": { Icon: Icons.argentMobile, size: "easyleap-size-5" },
         metamask: { Icon: Icons.metamask, size: "easyleap-size-5" },
@@ -380,9 +387,13 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         rainbow: { Icon: Icons.rainbow, size: "easyleap-size-5" },
         phantom: { Icon: Icons.phantom, size: "easyleap-size-5" },
         walletconnect: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        fordefi: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        okxwallet: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        xverse: { Icon: Icons.wallet, size: "easyleap-size-5" },
+        fordefi: { Icon: Icons.fordefi, size: "easyleap-size-5" },
+        okxwallet: { Icon: Icons.okxwallet, size: "easyleap-size-5" },
+        xverse: { Icon: Icons.xverse, size: "easyleap-size-5" },
+        // Cartridge Controller connector IDs vary by implementation; cover common cases.
+        cartridge: { Icon: Icons.cartridge, size: "easyleap-size-5" },
+        controller: { Icon: Icons.cartridge, size: "easyleap-size-5" },
+        "cartridge controller": { Icon: Icons.cartridge, size: "easyleap-size-5" },
         starknet: { Icon: Icons.wallet, size: "easyleap-size-5" },
         "argent web wallet": { Icon: Icons.wallet, size: "easyleap-size-5" }
     };
@@ -517,9 +528,13 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                         )}
                                     >
                                         <span className="easyleap-rounded-full easyleap-bg-[#fff] easyleap-p-1 easyleap--ml-[15px]">
-                                            {getWalletIcon(
-                                                connectedSnConnector?.id ??
-                                                    "braavos"
+                                            {isPrivyConnected ? (
+                                                <MailIcon className="easyleap-size-5" />
+                                            ) : (
+                                                getWalletIcon(
+                                                    connectedSnConnector?.id ??
+                                                        "braavos"
+                                                )
                                             )}
                                         </span>
                                         {shortAddress(
