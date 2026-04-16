@@ -152,7 +152,10 @@ export function EasyleapProvider(
         <SharedStateProvider>
             <ThemeProvider theme={props.theme}>
                 <QueryClientProvider client={queryClient}>
-                    <PrivyProvider appId={privyAppId} config={props.privyConfig}>
+                    <PrivyProvider
+                        appId={privyAppId}
+                        config={props.privyConfig}
+                    >
                         <PrivyContextProvider
                             config={{
                                 rpcUrl:
