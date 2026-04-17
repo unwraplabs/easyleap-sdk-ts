@@ -25,6 +25,7 @@ import { useTheme } from "@lib/contexts/ThemeContext";
 import { useAccount, evmConfig } from "@lib/hooks/useAccount";
 import { useMode } from "@lib/hooks/useMode";
 import { cn, shortAddress } from "@lib/utils";
+import { toast } from "@lib/hooks/use-toast";
 
 import { ModeSwitcher, type ConnectButtonProps } from ".";
 import { usePrivyContext } from "@lib/contexts/PrivyContext";
@@ -108,6 +109,20 @@ const WalletConnectPanel: React.FC<{
         border: cd.rowBorder,
         color: cd.rowTextColor,
         backgroundColor: "transparent"
+    };
+
+    const copyToClipboard = async (
+        e: React.MouseEvent,
+        fullAddress: string
+    ) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            await navigator.clipboard.writeText(fullAddress);
+            toast({ description: "Address copied" });
+        } catch {
+            toast({ description: "Failed to copy address", variant: "destructive" });
+        }
     };
 
     const ConnectRow: React.FC<{
@@ -227,7 +242,16 @@ const WalletConnectPanel: React.FC<{
                                             )
                                         )}
                                     </span>
-                                    {shortAddress(starknetAddress, 8, 8)}
+                                    <button
+                                        type="button"
+                                        className="easyleap-cursor-pointer"
+                                        title="Copy address"
+                                        onClick={(e) =>
+                                            copyToClipboard(e, starknetAddress)
+                                        }
+                                    >
+                                        {shortAddress(starknetAddress, 8, 8)}
+                                    </button>
                                 </div>
 
                                 <X
@@ -295,7 +319,16 @@ const WalletConnectPanel: React.FC<{
                                         className="easyleap-font-mono easyleap-text-xs"
                                         style={{ color: cd.mutedTextColor }}
                                     >
-                                        {shortAddress(evmAddress, 6, 6)}
+                                        <button
+                                            type="button"
+                                            className="easyleap-cursor-pointer"
+                                            title="Copy address"
+                                            onClick={(e) =>
+                                                copyToClipboard(e, evmAddress)
+                                            }
+                                        >
+                                            {shortAddress(evmAddress, 6, 6)}
+                                        </button>
                                     </span>
                                 </div>
                             </div>
@@ -430,6 +463,20 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         color: cd.rowTextColor,
         boxShadow: "0 24px 80px rgba(0,0,0,0.45)",
         ...style?.modalStyles
+    };
+
+    const copyToClipboard = async (
+        e: React.MouseEvent,
+        fullAddress: string
+    ) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            await navigator.clipboard.writeText(fullAddress);
+            toast({ description: "Address copied" });
+        } catch {
+            toast({ description: "Failed to copy address", variant: "destructive" });
+        }
     };
 
     const tabRadius = "10px";
@@ -567,7 +614,16 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                                 "metamask"
                                         )}
                                     </span>
-                                    {shortAddress(evmAddress, 4, 4)}
+                                    <button
+                                        type="button"
+                                        className="easyleap-cursor-pointer"
+                                        title="Copy address"
+                                        onClick={(e) =>
+                                            copyToClipboard(e, evmAddress)
+                                        }
+                                    >
+                                        {shortAddress(evmAddress, 4, 4)}
+                                    </button>
                                 </Button>
                             )}
                         </div>
