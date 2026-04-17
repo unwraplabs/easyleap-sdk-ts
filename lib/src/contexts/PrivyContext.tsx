@@ -28,7 +28,6 @@ export interface PrivyWalletData {
   walletId: string;
   address: string;
   publicKey: string;
-  isDeployed: boolean;
 }
 
 export interface PrivyContextValue {
@@ -87,7 +86,6 @@ export const PrivyContextProvider: React.FC<{
         walletId: data.wallet.walletId,
         address: data.wallet.address,
         publicKey: data.wallet.publicKey,
-        isDeployed: false,
       };
       setPrivyWallet(newWallet);
 
@@ -146,7 +144,6 @@ export const PrivyContextProvider: React.FC<{
       } else {
         log("Wallet found in database", {
           walletId: wallet.walletId,
-          isDeployed: wallet.isDeployed,
         });
       }
 
