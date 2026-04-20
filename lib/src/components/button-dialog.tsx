@@ -162,7 +162,7 @@ const WalletConnectPanel: React.FC<{
                                     onConnectStarknet?.();
                                 }}
                                 disabled={isLoadingWallet}
-                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-px-[15px] easyleap-py-[5px] my-button"
+                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-text-xs easyleap-px-[15px] easyleap-py-[5px] my-button"
                                 style={panelRowBase}
                             >
                                 {isLoadingWallet
@@ -170,8 +170,8 @@ const WalletConnectPanel: React.FC<{
                                     : "Email and Google"}
                                 <span
                                     className={cn(
-                                        "easyleap-rounded-full easyleap-border-2 easyleap-border-[#F4F4F4] easyleap-bg-transparent",
-                                        "easyleap-p-1.5"
+                                        "easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-bg-transparent",
+                                        "easyleap-p-1"
                                     )}
                                 >
                                     {isLoadingWallet ? (
@@ -273,7 +273,7 @@ const WalletConnectPanel: React.FC<{
 
             {showEvm && (
                 <div className="easyleap-mt-1 easyleap-w-full">
-                    <h5 className="easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
+                    <h5 className="easyleap-text-center easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
                         EVM Wallet
                     </h5>
 
@@ -633,7 +633,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                 </div>
 
                 <DialogContent
-                    className="easyleap-max-h-[100vh] easyleap-gap-5 easyleap-p-4 easyleap-font-dmSans md:easyleap-p-6 lg:easyleap-max-h-none"
+                    className="easyleap-flex easyleap-max-h-[85dvh] easyleap-flex-col easyleap-gap-5 easyleap-overflow-y-auto easyleap-p-4 easyleap-font-dmSans md:easyleap-p-6"
                     style={modalShellStyle}
                     closeClassName="easyleap-opacity-90 hover:easyleap-opacity-100"
                     closeStyle={
