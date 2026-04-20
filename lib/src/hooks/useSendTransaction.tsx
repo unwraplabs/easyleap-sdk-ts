@@ -7,6 +7,7 @@ import { Call } from "starknet";
 import {
   useSendTransaction as useSendTransactionEVM,
 } from "wagmi";
+import { ArgentXV050Preset, StarkZap } from "starkzap";
 
 import { InteractionMode } from "../contexts/SharedState";
 import { useMode } from "./useMode";
@@ -39,6 +40,25 @@ export interface UseSendTransactionResult_EasyLeap {
   isIdle: boolean;
   status?: string;
   reset: () => void;
+}
+
+function normalizeCalls(input: any): Call[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((c: any) => {
+      const contractAddress = c?.contractAddress ?? c?.to;
+      const entrypoint = c?.entrypoint ?? c?.selector;
+      const calldata = c?.calldata ?? [];
+      if (
+        typeof contractAddress !== "string" ||
+        typeof entrypoint !== "string" ||
+        !Array.isArray(calldata)
+      ) {
+        return null;
+      }
+      return { contractAddress, entrypoint, calldata } as Call;
+    })
+    .filter(Boolean) as Call[];
 }
 
 function getSendTransactionCallback(
@@ -120,7 +140,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   const mode = useMode();
 
   // Privy integration
-  const { privyWallet } = usePrivyContext();
+  const { privyWallet, config } = usePrivyContext();
   const { getAccessToken } = usePrivy();
   const [privyTxState, setPrivyTxState] = useState<{
     isPending: boolean;
@@ -148,6 +168,12 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
         throw new Error("Privy wallet not connected");
       }
 
+      if (!config?.rpcUrl) {
+        throw new Error(
+          "Missing rpcUrl for Privy/StarkZap. Provide `starkzap.rpcUrl` to EasyleapProvider or set NEXT_PUBLIC_RPC_URL.",
+        );
+      }
+
       setPrivyTxState({
         isPending: true,
         isSuccess: false,
@@ -162,32 +188,55 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
           throw new Error("Failed to get access token");
         }
 
-        const response = await fetch("/api/privy/execute-transaction", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userJwt}`,
-          },
-          body: JSON.stringify({
-            walletId: privyWallet.walletId,
-            calls,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData?.error || "Failed to execute transaction");
+        const normalizedCalls = normalizeCalls(calls);
+        if (normalizedCalls.length === 0) {
+          throw new Error("No calldata received");
         }
 
-        const data = await response.json();
-        logger.verbose("EL::useSendTransaction::privyTxSuccess", data);
+        const origin =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const serverUrl = origin ? `${origin}/api/wallet/sign` : "/api/wallet/sign";
+
+        const sdk = new StarkZap({
+          network: config.network ?? "sepolia",
+          rpcUrl: config.rpcUrl,
+          paymaster: {
+            nodeUrl: "/api/paymaster",
+            headers: {
+              Authorization: `Bearer ${userJwt}`,
+            },
+          } as any,
+        });
+
+        const onboard = await sdk.onboard({
+          strategy: "privy",
+          accountPreset: ArgentXV050Preset,
+          feeMode: "sponsored",
+          deploy: "if_needed",
+          privy: {
+            resolve: async () => ({
+              walletId: privyWallet.walletId,
+              publicKey: privyWallet.publicKey,
+              serverUrl,
+              headers: { Authorization: `Bearer ${userJwt}` },
+            }),
+          },
+        });
+
+        const tx = await onboard.wallet.execute(normalizedCalls, {
+          feeMode: "sponsored",
+        });
+        const txHash = (tx as any)?.hash as `0x${string}` | undefined;
+        logger.verbose("EL::useSendTransaction::privyTxSuccess", {
+          transactionHash: txHash,
+        });
 
         setPrivyTxState({
           isPending: false,
           isSuccess: true,
           isError: false,
           error: null,
-          data: data.transactionHash as `0x${string}`,
+          data: txHash,
         });
       } catch (error: any) {
         logger.verbose("EL::useSendTransaction::privyTxError", error);
@@ -201,7 +250,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
         throw error;
       }
     },
-    [privyWallet, getAccessToken],
+    [privyWallet, config?.rpcUrl, config?.network, getAccessToken],
   );
 
   // Reset Privy transaction state
