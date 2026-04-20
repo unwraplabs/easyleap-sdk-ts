@@ -119,20 +119,7 @@ export const PrivyContextProvider: React.FC<{
       });
 
       if (!getWalletRes.ok) {
-        const errSnippet = await getWalletRes
-          .text()
-          .then((t) => (typeof t === "string" ? t.slice(0, 300) : null))
-          .catch(() => null);
-        let errMsg: string | null = null;
-        try {
-          const parsed = JSON.parse(errSnippet ?? "{}") as any;
-          if (typeof parsed?.error === "string") errMsg = parsed.error;
-          if (!errMsg && typeof parsed?.message === "string") errMsg = parsed.message;
-        } catch {
-          // ignore
-        }
-
-        throw new Error(errMsg || "Failed to fetch wallet");
+        throw new Error("Failed to fetch wallet");
       }
 
       const data = await getWalletRes.json();
@@ -202,8 +189,7 @@ export const PrivyContextProvider: React.FC<{
     } catch (error: any) {
       log("Error setting up wallet", error);
       toast({
-        description:
-          error?.message || "Failed to setup wallet. Please try again.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
       setWalletSetupStep("idle");
