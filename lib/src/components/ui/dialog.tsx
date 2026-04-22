@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "easyleap-fixed easyleap-left-[50%] easyleap-top-[50%] easyleap-z-50 easyleap-grid easyleap-max-w-[100vw] easyleap-w-[425px] easyleap-translate-x-[-50%] easyleap-translate-y-[-50%] easyleap-gap-4 easyleap-p-6 easyleap-shadow-lg easyleap-duration-200 data-[state=open]:easyleap-animate-in data-[state=closed]:easyleap-animate-out data-[state=closed]:easyleap-fade-out-0 data-[state=open]:easyleap-fade-in-0 data-[state=closed]:easyleap-zoom-out-95 data-[state=open]:easyleap-zoom-in-95 data-[state=closed]:easyleap-slide-out-to-left-1/2 data-[state=closed]:easyleap-slide-out-to-top-[48%] data-[state=open]:easyleap-slide-in-from-left-1/2 data-[state=open]:easyleap-slide-in-from-top-[48%] easyleap-rounded-[10px]",
+        "easyleap-fixed easyleap-left-[50%] easyleap-top-[50%] easyleap-z-50 easyleap-grid easyleap-w-[calc(100vw-32px)] sm:easyleap-w-[425px] easyleap-max-w-[425px] easyleap-translate-x-[-50%] easyleap-translate-y-[-50%] easyleap-gap-4 easyleap-p-6 easyleap-shadow-lg easyleap-duration-200 data-[state=open]:easyleap-animate-in data-[state=closed]:easyleap-animate-out data-[state=closed]:easyleap-fade-out-0 data-[state=open]:easyleap-fade-in-0 data-[state=closed]:easyleap-zoom-out-95 data-[state=open]:easyleap-zoom-in-95 data-[state=closed]:easyleap-slide-out-to-left-1/2 data-[state=closed]:easyleap-slide-out-to-top-[48%] data-[state=open]:easyleap-slide-in-from-left-1/2 data-[state=open]:easyleap-slide-in-from-top-[48%] easyleap-rounded-[10px]",
         className
       )}
       {...props}
