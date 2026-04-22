@@ -392,8 +392,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     const theme = useTheme();
     const cd = theme.connectDialog!;
     const [chainFilter, setChainFilter] = React.useState<ChainFilter>("all");
-    const { config, user, privyWallet } = usePrivyContext();
-    const enableEvmMode = config?.ui?.enableEvmMode ?? true;
+    const { user, privyWallet } = usePrivyContext();
+    const enableEvmMode = sharedState.ui.enableEvmMode;
     const isPrivyConnected = React.useMemo(() => {
         return !!user || !!privyWallet?.address;
     }, [user, privyWallet?.address]);

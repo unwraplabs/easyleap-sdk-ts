@@ -19,9 +19,6 @@ const log = (message: string, data?: any) => {
 export interface PrivyProviderConfig {
   rpcUrl: string;
   network: "mainnet" | "sepolia";
-  ui?: {
-    enableEvmMode?: boolean;
-  };
 }
 
 export interface PrivyWalletData {

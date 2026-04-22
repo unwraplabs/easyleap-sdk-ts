@@ -140,16 +140,38 @@ export function EasyleapProvider(
     }, [props.queryClient]);
 
     const privyAppId = React.useMemo(() => {
-        if (typeof props.privyAppId === "string") return props.privyAppId;
-        return (
-            readEnv("NEXT_PUBLIC_PRIVY_APP_ID") ??
-            readEnv("VITE_PRIVY_APP_ID") ??
-            ""
+        const fromProps =
+            typeof props.privyAppId === "string"
+                ? props.privyAppId.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_PRIVY_APP_ID") ?? readEnv("VITE_PRIVY_APP_ID");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing Privy app id. Provide `privyAppId` or set NEXT_PUBLIC_PRIVY_APP_ID / VITE_PRIVY_APP_ID."
         );
     }, [props.privyAppId]);
 
+    const starkzapRpcUrl = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.rpcUrl === "string"
+                ? props.starkzap.rpcUrl.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv = readEnv("NEXT_PUBLIC_RPC_URL") ?? readEnv("VITE_RPC_URL");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing Starknet RPC url. Provide `starkzap.rpcUrl` or set NEXT_PUBLIC_RPC_URL / VITE_RPC_URL."
+        );
+    }, [props.starkzap?.rpcUrl]);
+
     return (
-        <SharedStateProvider>
+        <SharedStateProvider ui={props.ui}>
             <ThemeProvider theme={props.theme}>
                 <QueryClientProvider client={queryClient}>
                     <PrivyProvider
@@ -158,21 +180,13 @@ export function EasyleapProvider(
                     >
                         <PrivyContextProvider
                             config={{
-                                rpcUrl:
-                                    props.starkzap?.rpcUrl ??
-                                    readEnv("NEXT_PUBLIC_RPC_URL") ??
-                                    readEnv("VITE_RPC_URL") ??
-                                    "",
+                                rpcUrl: starkzapRpcUrl,
                                 network:
                                     props.starkzap?.network ??
                                     ((readEnv("NEXT_PUBLIC_CHAIN_ID") ??
                                         readEnv("VITE_CHAIN_ID")) === "SN_MAIN"
                                         ? "mainnet"
                                         : "sepolia"),
-                                ui: {
-                                    enableEvmMode:
-                                        props.ui?.enableEvmMode ?? true
-                                }
                             }}
                         >
                             <WagmiProvider config={wagmiConfig}>
