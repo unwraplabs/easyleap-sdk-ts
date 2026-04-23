@@ -145,6 +145,9 @@ export const PrivyContextProvider: React.FC<{
         rpcUrl: config.rpcUrl,
         paymaster: {
           nodeUrl: `/api/paymaster`,
+          headers: {
+            Authorization: `Bearer ${userJwt}`,
+          },
         },
       });
 
@@ -183,6 +186,18 @@ export const PrivyContextProvider: React.FC<{
       // The following wallet is to be used
       const connectedWallet = onboard.wallet;
       log("Wallet connected", { connectedWallet });
+
+      // Persist deployment status in DB (server verifies on-chain)
+      try {
+        await fetch(`/api/wallet/deployed`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userJwt}`,
+          },
+        });
+      } catch (e) {
+        log("Failed to persist wallet deployment status", e);
+      }
     } catch (error: any) {
       log("Error setting up wallet", error);
       toast({

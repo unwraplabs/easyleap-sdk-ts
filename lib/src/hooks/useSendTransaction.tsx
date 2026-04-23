@@ -91,6 +91,7 @@ function getSendTransactionCallback(
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-evm-error", e);
         console.error("EL::useSendTransaction::send-evm-error", e);
+        throw e;
       }
       return;
     }
@@ -113,6 +114,7 @@ function getSendTransactionCallback(
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-sn-error", e);
         console.error("EL::useSendTransaction::send-sn-error", e);
+        throw e;
       }
     }
   };
@@ -226,6 +228,10 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
         const tx = await onboard.wallet.execute(normalizedCalls, {
           feeMode: "sponsored",
         });
+        // Wait for L2 acceptance; execute() only returns a submitted tx hash
+        // (StarkZap `Tx` — see starkzap/src/tx `wait()`), otherwise UI can show
+        // "success" while the tx reverts or is not yet final.
+        await tx.wait();
         const txHash = (tx as any)?.hash as `0x${string}` | undefined;
         logger.verbose("EL::useSendTransaction::privyTxSuccess", {
           transactionHash: txHash,
