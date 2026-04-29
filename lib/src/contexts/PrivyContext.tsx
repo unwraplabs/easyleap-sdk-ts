@@ -145,6 +145,9 @@ export const PrivyContextProvider: React.FC<{
         rpcUrl: config.rpcUrl,
         paymaster: {
           nodeUrl: `/api/paymaster`,
+          headers: {
+            Authorization: `Bearer ${userJwt}`,
+          },
         },
       });
 

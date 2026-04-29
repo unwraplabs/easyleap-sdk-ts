@@ -204,8 +204,8 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
             nodeUrl: "/api/paymaster",
             headers: {
               Authorization: `Bearer ${userJwt}`,
-            },
-          } as any,
+            }
+          },
         });
 
         const onboard = await sdk.onboard({
