@@ -7,7 +7,6 @@ import { Call } from "starknet";
 import {
   useSendTransaction as useSendTransactionEVM,
 } from "wagmi";
-import { ArgentXV050Preset, StarkZap } from "starkzap";
 
 import { InteractionMode } from "../contexts/SharedState";
 import { useMode } from "./useMode";
@@ -15,7 +14,6 @@ import { toast } from "./use-toast";
 import { logger } from "@lib/utils/logger";
 
 import { usePrivyContext } from "../contexts/PrivyContext";
-import { usePrivy } from "@privy-io/react-auth";
 
 export interface EvmTxParams {
   to: `0x${string}`;
@@ -142,8 +140,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   const mode = useMode();
 
   // Privy integration
-  const { privyWallet, config } = usePrivyContext();
-  const { getAccessToken } = usePrivy();
+  const { starkzapWallet } = usePrivyContext();
   const [privyTxState, setPrivyTxState] = useState<{
     isPending: boolean;
     isSuccess: boolean;
@@ -160,20 +157,14 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
 
   // Check if using Privy wallet
   const isPrivyWallet = useMemo(() => {
-    return !!privyWallet?.address;
-  }, [privyWallet?.address]);
+    return !!starkzapWallet;
+  }, [starkzapWallet]);
 
   // Function to send transaction via Privy API
   const privySendTransaction = useCallback(
     async (calls: Call[]) => {
-      if (!privyWallet) {
+      if (!starkzapWallet) {
         throw new Error("Privy wallet not connected");
-      }
-
-      if (!config?.rpcUrl) {
-        throw new Error(
-          "Missing rpcUrl for Privy/StarkZap. Provide `starkzap.rpcUrl` to EasyleapProvider or set NEXT_PUBLIC_RPC_URL.",
-        );
       }
 
       setPrivyTxState({
@@ -185,47 +176,12 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
       });
 
       try {
-        const userJwt = await getAccessToken();
-        if (!userJwt) {
-          throw new Error("Failed to get access token");
-        }
-
         const normalizedCalls = normalizeCalls(calls);
         if (normalizedCalls.length === 0) {
           throw new Error("No calldata received");
         }
 
-        const origin =
-          typeof window !== "undefined" ? window.location.origin : "";
-        const serverUrl = origin ? `${origin}/api/wallet/sign` : "/api/wallet/sign";
-
-        const sdk = new StarkZap({
-          network: config.network ?? "sepolia",
-          rpcUrl: config.rpcUrl,
-          paymaster: {
-            nodeUrl: "/api/paymaster",
-            headers: {
-              Authorization: `Bearer ${userJwt}`,
-            }
-          },
-        });
-
-        const onboard = await sdk.onboard({
-          strategy: "privy",
-          accountPreset: ArgentXV050Preset,
-          feeMode: "sponsored",
-          deploy: "if_needed",
-          privy: {
-            resolve: async () => ({
-              walletId: privyWallet.walletId,
-              publicKey: privyWallet.publicKey,
-              serverUrl,
-              headers: { Authorization: `Bearer ${userJwt}` },
-            }),
-          },
-        });
-
-        const tx = await onboard.wallet.execute(normalizedCalls, {
+        const tx = await starkzapWallet.execute(normalizedCalls, {
           feeMode: "sponsored",
         });
         // Wait for L2 acceptance; execute() only returns a submitted tx hash
@@ -256,7 +212,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
         throw error;
       }
     },
-    [privyWallet, config?.rpcUrl, config?.network, getAccessToken],
+    [starkzapWallet],
   );
 
   // Reset Privy transaction state

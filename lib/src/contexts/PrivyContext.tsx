@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ArgentXV050Preset, StarkZap } from "starkzap";
+import { ArgentXV050Preset, StarkZap, type WalletInterface } from "starkzap";
 import { useLogin, useLogout, usePrivy, useUser } from "@privy-io/react-auth";
 import { toast } from "@lib/hooks/use-toast";
 
@@ -29,6 +29,7 @@ export interface PrivyWalletData {
 
 export interface PrivyContextValue {
   privyWallet: PrivyWalletData | null;
+  starkzapWallet: WalletInterface | null;
   walletSetupStep: "idle" | "creating" | "deploying" | "complete";
   isLoadingWallet: boolean;
   connectPrivy: () => Promise<void>;
@@ -49,6 +50,9 @@ export const PrivyContextProvider: React.FC<{
   const { getAccessToken } = usePrivy();
 
   const [privyWallet, setPrivyWallet] = useState<PrivyWalletData | null>(null);
+  const [starkzapWallet, setStarkzapWallet] = useState<WalletInterface | null>(
+    null,
+  );
   const [walletSetupStep, setWalletSetupStep] = useState<
     "idle" | "creating" | "deploying" | "complete"
   >("idle");
@@ -176,6 +180,13 @@ export const PrivyContextProvider: React.FC<{
               walletId: wallet.walletId,
               publicKey: wallet.publicKey,
               serverUrl,
+              headers: async () => {
+                const token = await getAccessToken();
+                if (!token) {
+                  throw new Error("Failed to get access token for wallet signing");
+                }
+                return { Authorization: `Bearer ${token}` };
+              },
             };
           },
         },
@@ -185,6 +196,7 @@ export const PrivyContextProvider: React.FC<{
 
       // The following wallet is to be used
       const connectedWallet = onboard.wallet;
+      setStarkzapWallet(connectedWallet);
       log("Wallet connected", { connectedWallet });
     } catch (error: any) {
       log("Error setting up wallet", error);
@@ -194,6 +206,7 @@ export const PrivyContextProvider: React.FC<{
       });
       setWalletSetupStep("idle");
       setPrivyWallet(null);
+      setStarkzapWallet(null);
     } finally {
       setIsLoadingWallet(false);
       setupInProgressRef.current = false;
@@ -205,6 +218,7 @@ export const PrivyContextProvider: React.FC<{
     if (!user || typeof window === "undefined") {
       log("User logged out, clearing wallet state");
       setPrivyWallet(null);
+      setStarkzapWallet(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;
       setupInProgressRef.current = false;
@@ -252,6 +266,7 @@ export const PrivyContextProvider: React.FC<{
     try {
       await logout();
       setPrivyWallet(null);
+      setStarkzapWallet(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;
       setupInProgressRef.current = false;
@@ -263,6 +278,7 @@ export const PrivyContextProvider: React.FC<{
 
   const value: PrivyContextValue = {
     privyWallet,
+    starkzapWallet,
     walletSetupStep,
     isLoadingWallet,
     connectPrivy,
@@ -283,6 +299,7 @@ export const usePrivyContext = (): PrivyContextValue => {
     // Return default values when Privy is not configured
     return {
       privyWallet: null,
+      starkzapWallet: null,
       walletSetupStep: "idle",
       isLoadingWallet: false,
       connectPrivy: async () => {
