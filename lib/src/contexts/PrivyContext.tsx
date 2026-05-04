@@ -8,13 +8,7 @@ import React, {
 import { ArgentXV050Preset, StarkZap, type WalletInterface } from "starkzap";
 import { useLogin, useLogout, usePrivy, useUser } from "@privy-io/react-auth";
 import { toast } from "@lib/hooks/use-toast";
-
-// Logging utility
-const log = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[PrivyContext] ${message}`, data || "");
-  }
-};
+import { logger } from "@lib/utils/logger";
 
 export interface PrivyProviderConfig {
   rpcUrl: string;
@@ -63,7 +57,7 @@ export const PrivyContextProvider: React.FC<{
   const lastUserIdRef = useRef<string | null>(null);
 
   async function createWallet(token: string) {
-    log("Creating wallet...");
+    logger.verbose("[PrivyContext] Creating wallet...");
     setWalletSetupStep("creating");
 
     try {
@@ -80,7 +74,9 @@ export const PrivyContextProvider: React.FC<{
       }
 
       const data = await response.json();
-      log("Wallet created", { walletId: data.wallet.walletId });
+      logger.verbose("[PrivyContext] Wallet created", {
+        walletId: data.wallet.walletId,
+      });
 
       // Update state with created wallet
       const newWallet: PrivyWalletData = {
@@ -99,7 +95,7 @@ export const PrivyContextProvider: React.FC<{
   // Setup wallet function
   const setupWallet = async (userJwt: string) => {
     if (setupInProgressRef.current) {
-      log("Wallet setup already in progress, skipping");
+      logger.verbose("[PrivyContext] Wallet setup already in progress, skipping");
       return;
     }
 
@@ -109,7 +105,7 @@ export const PrivyContextProvider: React.FC<{
     setIsLoadingWallet(true);
 
     try {
-      log("Fetching wallet from database...");
+      logger.verbose("[PrivyContext] Fetching wallet from database...");
 
       // Check database for existing wallet
       const getWalletRes = await fetch(`/api/wallet`, {
@@ -127,10 +123,10 @@ export const PrivyContextProvider: React.FC<{
       wallet = data.wallet;
 
       if (!wallet) {
-        log("No wallet found, creating new wallet...");
+        logger.verbose("[PrivyContext] No wallet found, creating new wallet...");
         wallet = await createWallet(userJwt);
       } else {
-        log("Wallet found in database", {
+        logger.verbose("[PrivyContext] Wallet found in database", {
           walletId: wallet.walletId,
         });
       }
@@ -197,9 +193,9 @@ export const PrivyContextProvider: React.FC<{
       // The following wallet is to be used
       const connectedWallet = onboard.wallet;
       setStarkzapWallet(connectedWallet);
-      log("Wallet connected", { connectedWallet });
+      logger.verbose("[PrivyContext] Wallet connected", { connectedWallet });
     } catch (error: any) {
-      log("Error setting up wallet", error);
+      logger.error("[PrivyContext] Error setting up wallet", error);
       toast({
         description: "Something went wrong. Please try again.",
         variant: "destructive",
@@ -216,7 +212,7 @@ export const PrivyContextProvider: React.FC<{
   // Minimal useEffect - only runs when user changes
   useEffect(() => {
     if (!user || typeof window === "undefined") {
-      log("User logged out, clearing wallet state");
+      logger.verbose("[PrivyContext] User logged out, clearing wallet state");
       setPrivyWallet(null);
       setStarkzapWallet(null);
       setWalletSetupStep("idle");
@@ -228,24 +224,26 @@ export const PrivyContextProvider: React.FC<{
     // Only setup if user changed
     const currentUserId = user.id;
     if (lastUserIdRef.current === currentUserId) {
-      log("Same user, skipping wallet setup");
+      logger.verbose("[PrivyContext] Same user, skipping wallet setup");
       return;
     }
 
     lastUserIdRef.current = currentUserId;
-    log("User changed, setting up wallet", { userId: currentUserId });
+    logger.verbose("[PrivyContext] User changed, setting up wallet", {
+      userId: currentUserId,
+    });
 
     // Get JWT and setup wallet
     getAccessToken()
       .then((userJwt: string | null) => {
         if (!userJwt) {
-          log("Failed to get user JWT");
+          logger.warn("[PrivyContext] Failed to get user JWT");
           return;
         }
         setupWallet(userJwt);
       })
       .catch((error: any) => {
-        log("Error getting access token", error);
+        logger.error("[PrivyContext] Error getting access token", error);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
