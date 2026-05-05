@@ -80,6 +80,27 @@ export interface GlobalTheme {
   //     border?: string;
   //   };
   // };
+
+  /** Connect wallet modal (dark dialog); override `accent` per brand (e.g. green / purple). */
+  connectDialog?: {
+    modalBackground?: string;
+    modalBorder?: string;
+    modalBorderRadius?: string;
+    titleColor?: string;
+    mutedTextColor?: string;
+    /** Active “All chains” tab pill, row hover emphasis, multichain dot */
+    accent?: string;
+    /** Active tab pill label color (often dark on light accent) */
+    accentForeground?: string;
+    tabBarBorder?: string;
+    tabInactiveBackground?: string;
+    rowBorder?: string;
+    rowHoverBackground?: string;
+    rowTextColor?: string;
+    closeButtonColor?: string;
+    moreOptionsBackground?: string;
+    moreOptionsTextColor?: string;
+  };
 }
 
 const defaultTheme: GlobalTheme = {
@@ -133,6 +154,22 @@ const defaultTheme: GlobalTheme = {
     }
   },
 
+  connectDialog: {
+    modalBackground: "#1A1A2E",
+    modalBorder: "1px solid #3F3F5F",
+    modalBorderRadius: "16px",
+    titleColor: "#E8E8F0",
+    mutedTextColor: "#9898B0",
+    accent: "#B4A7D6",
+    accentForeground: "#1A1528",
+    tabBarBorder: "1px solid #3F3F5F",
+    tabInactiveBackground: "transparent",
+    rowBorder: "1px solid #3F3F5F",
+    rowHoverBackground: "#2A2A45",
+    rowTextColor: "#E8E8F0",
+    closeButtonColor: "#B4A7D6"
+  },
+
   // BRIDGE MODE - bridgeMode default theme commented out
   // bridgeMode: {
   //   mainBgColor: "#1B182B",
@@ -152,7 +189,14 @@ export const ThemeProvider = ({
   theme?: GlobalTheme;
   children: React.ReactNode;
 }) => {
-  const mergedTheme = { ...defaultTheme, ...theme };
+  const mergedTheme: GlobalTheme = {
+    ...defaultTheme,
+    ...theme,
+    connectDialog: {
+      ...defaultTheme.connectDialog,
+      ...theme?.connectDialog
+    }
+  };
 
   return (
     <ThemeContext.Provider value={mergedTheme}>

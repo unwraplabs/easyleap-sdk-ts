@@ -14,7 +14,6 @@ import { toast } from "./use-toast";
 import { logger } from "@lib/utils/logger";
 
 import { usePrivyContext } from "../contexts/PrivyContext";
-import { usePrivy } from "@privy-io/react-auth";
 
 export interface EvmTxParams {
   to: `0x${string}`;
@@ -39,6 +38,25 @@ export interface UseSendTransactionResult_EasyLeap {
   isIdle: boolean;
   status?: string;
   reset: () => void;
+}
+
+function normalizeCalls(input: any): Call[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((c: any) => {
+      const contractAddress = c?.contractAddress ?? c?.to;
+      const entrypoint = c?.entrypoint ?? c?.selector;
+      const calldata = c?.calldata ?? [];
+      if (
+        typeof contractAddress !== "string" ||
+        typeof entrypoint !== "string" ||
+        !Array.isArray(calldata)
+      ) {
+        return null;
+      }
+      return { contractAddress, entrypoint, calldata } as Call;
+    })
+    .filter(Boolean) as Call[];
 }
 
 function getSendTransactionCallback(
@@ -71,6 +89,7 @@ function getSendTransactionCallback(
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-evm-error", e);
         console.error("EL::useSendTransaction::send-evm-error", e);
+        throw e;
       }
       return;
     }
@@ -93,6 +112,7 @@ function getSendTransactionCallback(
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-sn-error", e);
         console.error("EL::useSendTransaction::send-sn-error", e);
+        throw e;
       }
     }
   };
@@ -120,8 +140,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   const mode = useMode();
 
   // Privy integration
-  const { privyWallet } = usePrivyContext();
-  const { getAccessToken } = usePrivy();
+  const { starkzapWallet } = usePrivyContext();
   const [privyTxState, setPrivyTxState] = useState<{
     isPending: boolean;
     isSuccess: boolean;
@@ -138,13 +157,13 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
 
   // Check if using Privy wallet
   const isPrivyWallet = useMemo(() => {
-    return !!privyWallet?.address;
-  }, [privyWallet?.address]);
+    return !!starkzapWallet;
+  }, [starkzapWallet]);
 
   // Function to send transaction via Privy API
   const privySendTransaction = useCallback(
     async (calls: Call[]) => {
-      if (!privyWallet) {
+      if (!starkzapWallet) {
         throw new Error("Privy wallet not connected");
       }
 
@@ -157,37 +176,29 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
       });
 
       try {
-        const userJwt = await getAccessToken();
-        if (!userJwt) {
-          throw new Error("Failed to get access token");
+        const normalizedCalls = normalizeCalls(calls);
+        if (normalizedCalls.length === 0) {
+          throw new Error("No calldata received");
         }
 
-        const response = await fetch("/api/privy/execute-transaction", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userJwt}`,
-          },
-          body: JSON.stringify({
-            walletId: privyWallet.walletId,
-            calls,
-          }),
+        const tx = await starkzapWallet.execute(normalizedCalls, {
+          feeMode: "sponsored",
         });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData?.error || "Failed to execute transaction");
-        }
-
-        const data = await response.json();
-        logger.verbose("EL::useSendTransaction::privyTxSuccess", data);
+        // Wait for L2 acceptance; execute() only returns a submitted tx hash
+        // (StarkZap `Tx` — see starkzap/src/tx `wait()`), otherwise UI can show
+        // "success" while the tx reverts or is not yet final.
+        await tx.wait();
+        const txHash = (tx as any)?.hash as `0x${string}` | undefined;
+        logger.verbose("EL::useSendTransaction::privyTxSuccess", {
+          transactionHash: txHash,
+        });
 
         setPrivyTxState({
           isPending: false,
           isSuccess: true,
           isError: false,
           error: null,
-          data: data.transactionHash as `0x${string}`,
+          data: txHash,
         });
       } catch (error: any) {
         logger.verbose("EL::useSendTransaction::privyTxError", error);
@@ -201,7 +212,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
         throw error;
       }
     },
-    [privyWallet, getAccessToken],
+    [starkzapWallet],
   );
 
   // Reset Privy transaction state

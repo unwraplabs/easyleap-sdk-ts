@@ -16,7 +16,7 @@
 }
 
 .my-button {
-  @apply easyleap-rounded-full easyleap-bg-[var(--inner-theme-bg)] hover:easyleap-bg-[var(--inner-theme-hover-background)] easyleap-border easyleap-border-[var(--inner-theme-inactive-border)] easyleap-text-[var(--inner-theme-text-color)]
+  @apply easyleap-rounded-lg easyleap-bg-[var(--inner-theme-bg)] hover:easyleap-bg-[var(--inner-theme-hover-background)] easyleap-border easyleap-border-[var(--inner-theme-inactive-border)] easyleap-text-[var(--inner-theme-text-color)]
 }
 
 .my-active-button {

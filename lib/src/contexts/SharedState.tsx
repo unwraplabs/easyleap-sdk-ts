@@ -26,6 +26,10 @@ export interface SharedContext {
   isModeSwitchedManually: boolean;
   setModeSwitchedManually: (value: boolean) => void;
 
+  ui: {
+    enableEvmMode: boolean;
+  };
+
   // BRIDGE MODE - reviewModalProps commented out (bridge-specific)
   // reviewModalProps: ReviewModalProps;
   // setReviewModalProps: (value: ReviewModalProps) => void;
@@ -57,6 +61,10 @@ const SharedStateContext = React.createContext({
   setMode: () => {},
   isModeSwitchedManually: false,
   setModeSwitchedManually: () => {},
+
+  ui: {
+    enableEvmMode: true
+  },
 
   // BRIDGE MODE - reviewModalProps commented out
   // reviewModalProps: {
@@ -99,13 +107,21 @@ const SharedStateContext = React.createContext({
 } as SharedContext);
 
 export const SharedStateProvider = ({
+  ui,
   children
 }: {
+  ui?: { enableEvmMode?: boolean };
   children: React.ReactNode;
 }) => {
   const [mode, setMode] = React.useState(InteractionMode.None);
   const [isModeSwitchedManually, setModeSwitchedManually] =
     React.useState(false);
+  const uiValue = React.useMemo(
+    () => ({
+      enableEvmMode: ui?.enableEvmMode ?? true
+    }),
+    [ui?.enableEvmMode]
+  );
 
   // BRIDGE MODE - reviewModalProps state commented out
   // const [reviewModalProps, setReviewModalProps] =
@@ -190,6 +206,7 @@ export const SharedStateProvider = ({
         setMode,
         isModeSwitchedManually,
         setModeSwitchedManually,
+        ui: uiValue,
         connectWalletModalOpen,
         setConnectWalletModalOpen,
         isTxnPopoverOpen,

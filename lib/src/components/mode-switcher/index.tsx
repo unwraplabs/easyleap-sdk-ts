@@ -35,10 +35,19 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
                 id="mode-switch"
                 checked={mode === InteractionMode.EVM}
                 onCheckedChange={(value) => {
-                  if (!evmAddress) {
-                    return toast({
-                      title: "Connect an EVM wallet to enable EVM mode"
-                    });
+                  if (value) {
+                    if (!evmAddress) {
+                      return toast({
+                        title: "Connect an EVM wallet to enable EVM mode"
+                      });
+                    }
+                  } else {
+                    if (!starknetAddress) {
+                      return toast({
+                        title:
+                          "Connect a Starknet wallet to enable Starknet mode"
+                      });
+                    }
                   }
                   sharedState.setMode(
                     value ? InteractionMode.EVM : InteractionMode.Starknet
