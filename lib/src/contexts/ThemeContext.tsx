@@ -98,6 +98,8 @@ export interface GlobalTheme {
     rowHoverBackground?: string;
     rowTextColor?: string;
     closeButtonColor?: string;
+    moreOptionsBackground?: string;
+    moreOptionsTextColor?: string;
   };
 }
 

@@ -3,7 +3,7 @@ import {
     useConnect as useConnectSN,
     useDisconnect as useDisconnectSN
 } from "@starknet-react/core";
-import { Loader2, MailIcon, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, MailIcon, X } from "lucide-react";
 import React from "react";
 import {
     useConnect as useConnectWagmi,
@@ -31,6 +31,12 @@ import { ModeSwitcher, type ConnectButtonProps } from ".";
 import { usePrivyContext } from "@lib/contexts/PrivyContext";
 
 type ChainFilter = "all" | "starknet" | "ethereum";
+
+// Priority wallets to show first (Argent, Braavos, Xverse)
+const PRIORITY_WALLET_IDS = ["argentX", "braavos", "xverse"];
+
+// Social login wallets (Cartridge)
+const SOCIAL_LOGIN_WALLET_IDS = ["cartridge"];
 
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
@@ -98,6 +104,34 @@ const WalletConnectPanel: React.FC<{
         [evmConnectors]
     );
 
+    // Prioritize specific wallets in order: Argent, Braavos, Xverse
+    const priorityWallets = React.useMemo(
+        () =>
+            PRIORITY_WALLET_IDS
+                .map((id) => uniqueSn.find((c) => c.id === id))
+                .filter((c): c is NonNullable<typeof c> => c !== undefined),
+        [uniqueSn]
+    );
+
+    // Social login wallets (Cartridge)
+    const socialLoginWallets = React.useMemo(
+        () =>
+            SOCIAL_LOGIN_WALLET_IDS
+                .map((id) => uniqueSn.find((c) => c.id === id))
+                .filter((c): c is NonNullable<typeof c> => c !== undefined),
+        [uniqueSn]
+    );
+
+    const otherWallets = React.useMemo(
+        () =>
+            uniqueSn.filter(
+                (c) => !PRIORITY_WALLET_IDS.includes(c.id) && !SOCIAL_LOGIN_WALLET_IDS.includes(c.id)
+            ),
+        [uniqueSn]
+    );
+
+    const [showMoreOptions, setShowMoreOptions] = React.useState(false);
+
     const showSn = chainFilter === "all" || chainFilter === "starknet";
     const showEvm =
         enableEvmMode && (chainFilter === "all" || chainFilter === "ethereum");
@@ -135,13 +169,13 @@ const WalletConnectPanel: React.FC<{
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-text-xs easyleap-px-[15px] easyleap-py-[5px] my-button"
+            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-md easyleap-px-[15px] easyleap-py-[8px] my-button"
             style={panelRowBase}
         >
-            {label}
             <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
                 {icon}
             </span>
+            {label}
         </button>
     );
 
@@ -149,40 +183,16 @@ const WalletConnectPanel: React.FC<{
         <div className="easyleap-flex easyleap-flex-col easyleap-gap-4">
             {showSn && (
                 <div className="easyleap-mt-1 easyleap-w-full">
-                    <h5 className="easyleap-text-center easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2">
-                        Starknet Wallet
-                    </h5>
+                    {/* TODO: Commenting for now until we get native EVM connections */}
+        
+                    {/* <h5 className="easyleap-text-center easyleap-text-xs easyleap-font-semibold easyleap-text-[#8E8E8E] easyleap-mb-2"> */}
+                    {/*     Starknet Wallet */}
+                    {/* </h5> */}
 
                     {!starknetAddress ? (
                         <div className="easyleap-space-y-2.5">
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    await connectPrivy();
-                                    onConnectStarknet?.();
-                                }}
-                                disabled={isLoadingWallet}
-                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-text-xs easyleap-px-[15px] easyleap-py-[5px] my-button"
-                                style={panelRowBase}
-                            >
-                                {isLoadingWallet
-                                    ? "Setting up wallet..."
-                                    : "Email and Google"}
-                                <span
-                                    className={cn(
-                                        "easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-bg-transparent",
-                                        "easyleap-p-1"
-                                    )}
-                                >
-                                    {isLoadingWallet ? (
-                                        <Loader2 className="easyleap-size-5 easyleap-animate-spin" />
-                                    ) : (
-                                        <MailIcon className="easyleap-size-5" />
-                                    )}
-                                </span>
-                            </button>
-
-                            {uniqueSn.map((connector) => (
+                            {/* Priority wallets: Argent, Braavos, Xverse */}
+                            {priorityWallets.map((connector) => (
                                 <ConnectRow
                                     key={connector.id}
                                     label={walletLabel(connector.name)}
@@ -191,7 +201,6 @@ const WalletConnectPanel: React.FC<{
                                         if (isPrivyConnected) {
                                             await disconnectPrivy();
                                         }
-                                            // Cartridge Controller sometimes fails silently; use async connect to capture errors.
                                             try {
                                                 if (connectSNAsync) {
                                                     await connectSNAsync({
@@ -210,6 +219,142 @@ const WalletConnectPanel: React.FC<{
                                     }}
                                 />
                             ))}
+
+                            {/* Separator */}
+                            {/* <div className="easyleap-border-t easyleap-border-[#D1D5DB] easyleap-my-3" /> */}
+
+                            {/* Social Login section */}
+                            <h5 className="easyleap-text-md easyleap-font-semibold easyleap-text-[#6B7280] easyleap-mb-2 easyleap-px-1">
+                                Social Login
+                            </h5>
+
+                            {/* Email and Google */}
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    await connectPrivy();
+                                    onConnectStarknet?.();
+                                }}
+                                disabled={isLoadingWallet}
+                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-md easyleap-px-[15px] easyleap-py-[8px] my-button"
+                                style={panelRowBase}
+                            >
+                                <span
+                                    className={cn(
+                                        "easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-bg-transparent",
+                                        "easyleap-p-1"
+                                    )}
+                                >
+                                    {isLoadingWallet ? (
+                                        <Loader2 className="easyleap-size-8 easyleap-p-1 easyleap-animate-spin" />
+                                    ) : (
+                                        <MailIcon className="easyleap-size-8 easyleap-p-1" />
+                                    )}
+                                </span>
+                                {isLoadingWallet
+                                    ? "Setting up wallet..."
+                                    : "Email and Google"}
+                            </button>
+
+                            {/* Social login wallets: Cartridge */}
+                            {socialLoginWallets.map((connector) => (
+                                <ConnectRow
+                                    key={connector.id}
+                                    label={walletLabel(connector.name)}
+                                    icon={getWalletIcon(connector.id)}
+                                    onClick={async () => {
+                                        if (isPrivyConnected) {
+                                            await disconnectPrivy();
+                                        }
+                                            try {
+                                                if (connectSNAsync) {
+                                                    await connectSNAsync({
+                                                        connector
+                                                    } as any);
+                                                } else {
+                                                    connectSN({ connector } as any);
+                                                }
+                                            } catch (err: any) {
+                                                console.error(
+                                                    "Failed to connect Starknet wallet:",
+                                                    err
+                                                );
+                                            }
+                                        onConnectStarknet?.();
+                                    }}
+                                />
+                            ))}
+
+                            {/* Separator before More Options */}
+                            {otherWallets.length > 0 && (
+                                <div className="easyleap-border-t easyleap-border-[#ECECED80] easyleap-my-8" />
+                            )}
+
+                            {/* More Options / Show Less */}
+                            {otherWallets.length > 0 && (
+                                <>
+                                    {!showMoreOptions && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMoreOptions(true)}
+                                            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-md easyleap-px-[15px] easyleap-py-[7px] my-button"
+                                            style={{
+                                                backgroundColor: cd.moreOptionsBackground || panelRowBase.backgroundColor,
+                                                color: cd.moreOptionsTextColor || panelRowBase.color
+                                            }}
+                                        >
+                                            <span>More options</span>
+                                            <ChevronDown className="easyleap-size-5" />
+                                        </button>
+                                    )}
+
+                                    {showMoreOptions && (
+                                        <>
+                                            {otherWallets.map((connector) => (
+                                                <ConnectRow
+                                                    key={connector.id}
+                                                    label={walletLabel(connector.name)}
+                                                    icon={getWalletIcon(connector.id)}
+                                                    onClick={async () => {
+                                                        if (isPrivyConnected) {
+                                                            await disconnectPrivy();
+                                                        }
+                                                            try {
+                                                                if (connectSNAsync) {
+                                                                    await connectSNAsync({
+                                                                        connector
+                                                                    } as any);
+                                                                } else {
+                                                                    connectSN({ connector } as any);
+                                                                }
+                                                            } catch (err: any) {
+                                                                console.error(
+                                                                    "Failed to connect Starknet wallet:",
+                                                                    err
+                                                                );
+                                                            }
+                                                        onConnectStarknet?.();
+                                                        setShowMoreOptions(false);
+                                                    }}
+                                                />
+                                            ))}
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMoreOptions(false)}
+                                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-md easyleap-px-[15px] easyleap-py-[7px] my-button"
+                                                style={{
+                                                    backgroundColor: cd.moreOptionsBackground || panelRowBase.backgroundColor,
+                                                    color: cd.moreOptionsTextColor || panelRowBase.color
+                                                }}
+                                            >
+                                                <span>Show less</span>
+                                                <ChevronUp className="easyleap-size-5" />
+                                            </button>
+                                        </>
+                                    )}
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-2">
@@ -438,10 +583,11 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         return wallet ? (
             <wallet.Icon
                 key={walletId}
-                className={wallet.size || "easyleap-size-5"}
+                // This will ensure consistent sizing
+                className={"easyleap-size-8 easyleap-p-1"}
             />
         ) : (
-            <Icons.wallet className="easyleap-size-5" />
+            <Icons.wallet className="easyleap-size-8 easyleap-p-1" />
         );
     };
 
@@ -647,7 +793,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                             className="easyleap-text-xl easyleap-font-medium md:easyleap-text-2xl"
                             style={{ color: cd.titleColor }}
                         >
-                            Connect wallet to
+                            Connect Wallet
                         </DialogTitle>
                     </DialogHeader>
 
