@@ -169,7 +169,7 @@ const WalletConnectPanel: React.FC<{
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-md easyleap-px-[15px] easyleap-py-[8px] my-button"
+            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
             style={panelRowBase}
         >
             <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
@@ -236,7 +236,7 @@ const WalletConnectPanel: React.FC<{
                                     onConnectStarknet?.();
                                 }}
                                 disabled={isLoadingWallet}
-                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-md easyleap-px-[15px] easyleap-py-[8px] my-button"
+                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
                                 style={panelRowBase}
                             >
                                 <span
@@ -297,7 +297,7 @@ const WalletConnectPanel: React.FC<{
                                         <button
                                             type="button"
                                             onClick={() => setShowMoreOptions(true)}
-                                            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-md easyleap-px-[15px] easyleap-py-[7px] my-button"
+                                            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[7px] my-button"
                                             style={{
                                                 backgroundColor: cd.moreOptionsBackground || panelRowBase.backgroundColor,
                                                 color: cd.moreOptionsTextColor || panelRowBase.color
@@ -342,7 +342,7 @@ const WalletConnectPanel: React.FC<{
                                             <button
                                                 type="button"
                                                 onClick={() => setShowMoreOptions(false)}
-                                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-md easyleap-px-[15px] easyleap-py-[7px] my-button"
+                                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-center easyleap-gap-2 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[7px] my-button"
                                                 style={{
                                                     backgroundColor: cd.moreOptionsBackground || panelRowBase.backgroundColor,
                                                     color: cd.moreOptionsTextColor || panelRowBase.color
