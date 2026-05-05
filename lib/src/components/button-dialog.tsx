@@ -32,11 +32,11 @@ import { usePrivyContext } from "@lib/contexts/PrivyContext";
 
 type ChainFilter = "all" | "starknet" | "ethereum";
 
-// Priority wallets to show first (Argent, Braavos, Xverse)
-const PRIORITY_WALLET_IDS = ["argentX", "braavos", "xverse"];
+// Priority wallets to show first (Argent, Braavos, Xverse - including mobile variants)
+const PRIORITY_WALLET_IDS = ["argentX", "argentMobile", "braavos", "braavosMobile", "xverse"];
 
 // Social login wallets (Cartridge)
-const SOCIAL_LOGIN_WALLET_IDS = ["cartridge"];
+const SOCIAL_LOGIN_WALLET_IDS = ["cartridge", "controller", "cartridge controller"];
 
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
@@ -554,10 +554,11 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         { Icon: React.ElementType; size?: string }
     > = {
         braavos: { Icon: Icons.braavos, size: "easyleap-size-5" },
+        braavosmobile: { Icon: Icons.braavos, size: "easyleap-size-5" },
         argentx: { Icon: Icons.argentX, size: "easyleap-size-15" },
         argentwebwallet: { Icon: Icons.wallet, size: "easyleap-size-5" },
         keplr: { Icon: Icons.keplr, size: "easyleap-size-5" },
-        "argent-mobile": { Icon: Icons.argentMobile, size: "easyleap-size-5" },
+        argentmobile: { Icon: Icons.argentMobile, size: "easyleap-size-5" },
         metamask: { Icon: Icons.metamask, size: "easyleap-size-5" },
         "coinbase wallet": { Icon: Icons.coinbase, size: "easyleap-size-5" },
         subwallet: { Icon: Icons.subwallet, size: "easyleap-size-5" },
