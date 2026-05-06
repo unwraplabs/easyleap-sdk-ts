@@ -95,12 +95,30 @@ export function useBridgeDialog({
         totalFeeAmount = Amount.parse("0", 18, "ETH");
       }
 
+      // Fetch ETH price to calculate USD value of gas fees
+      let feeUsdValue = "$0.00";
+      try {
+        const ethPriceUrl = `${TROVES_PRICE_API_ENDPOINT}/api/price/ETH`;
+        const ethPriceResponse = await fetch(ethPriceUrl);
+        if (ethPriceResponse.ok) {
+          const ethPricePayload: unknown = await ethPriceResponse.json();
+          const ethPrice = extractPriceFromPayload(ethPricePayload);
+          if (Number.isFinite(ethPrice) && ethPrice > 0) {
+            const feeInEth = parseFloat(totalFeeAmount.toUnit());
+            const feeUsd = feeInEth * ethPrice;
+            feeUsdValue = `$${feeUsd.toFixed(2)}`;
+          }
+        }
+      } catch (ethPriceError) {
+        console.error("Failed to fetch ETH price for fee calculation:", ethPriceError);
+      }
+
       setDepositInfo({
         balance: balance.toFormatted(),
         allowance: allowance?.toFormatted() || null,
         estimatedFees: {
           amount: totalFeeAmount.toUnit(),
-          usdValue: "$0.34", // TODO: Calculate USD value from fees
+          usdValue: feeUsdValue,
         },
       });
     } catch (error) {

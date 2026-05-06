@@ -13,8 +13,6 @@ import { logger } from "@lib/utils/logger";
 export interface PrivyProviderConfig {
   rpcUrl: string;
   network: "mainnet" | "sepolia";
-  ethereumRpcUrl: string;
-  layerZeroApiKey?: string;
 }
 
 export interface PrivyWalletData {
@@ -152,10 +150,6 @@ export const PrivyContextProvider: React.FC<{
           headers: {
             Authorization: `Bearer ${userJwt}`,
           },
-        },
-        bridging: {
-          ethereumRpcUrl: config.ethereumRpcUrl,
-          layerZeroApiKey: config.layerZeroApiKey,
         },
       });
 

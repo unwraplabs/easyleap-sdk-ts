@@ -66,28 +66,28 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
   const steps = buildDepositSteps(depositProgress.externalTxHash, depositProgress.starknetTxHash);
 
   return (
-    <div className="easyleap-space-y-4">
+    <div className="easyleap-space-y-3 md:easyleap-space-y-4">
       <div
-        className="easyleap-p-4 easyleap-rounded-lg easyleap-space-y-2"
+        className="easyleap-p-3 md:easyleap-p-4 easyleap-rounded-lg easyleap-space-y-2"
         style={{ backgroundColor: cd?.rowHoverBackground || "#f5f5f5" }}
       >
         <div className="easyleap-flex easyleap-items-center easyleap-justify-between">
-          <p className="easyleap-text-sm easyleap-font-medium">Amount to deposit</p>
-          <p className="easyleap-text-sm easyleap-font-mono">{amount} STRK</p>
+          <p className="easyleap-text-xs md:easyleap-text-sm easyleap-font-medium">Amount to deposit</p>
+          <p className="easyleap-text-xs md:easyleap-text-sm easyleap-font-mono">{amount} STRK</p>
         </div>
         {depositInfo.estimatedFees && (
           <div className="easyleap-flex easyleap-items-center easyleap-justify-between">
             <p
-              className="easyleap-text-xs easyleap-flex easyleap-items-center easyleap-gap-1"
+              className="easyleap-text-[10px] md:easyleap-text-xs easyleap-flex easyleap-items-center easyleap-gap-1"
               style={{ color: cd?.mutedTextColor || "#666" }}
             >
               <Info className="easyleap-size-3" /> Estimated fees
             </p>
             <div className="easyleap-text-right">
-              <p className="easyleap-text-xs easyleap-font-mono">
+              <p className="easyleap-text-[10px] md:easyleap-text-xs easyleap-font-mono">
                 {depositInfo.estimatedFees.amount} ETH
               </p>
-              <p className="easyleap-text-xs" style={{ color: cd?.mutedTextColor || "#666" }}>
+              <p className="easyleap-text-[10px] md:easyleap-text-xs" style={{ color: cd?.mutedTextColor || "#666" }}>
                 {depositInfo.estimatedFees.usdValue}
               </p>
             </div>
@@ -101,7 +101,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
           const isLast = index === steps.length - 1;
 
           return (
-            <div key={index} className="easyleap-flex easyleap-gap-3">
+            <div key={index} className="easyleap-flex easyleap-gap-2 md:easyleap-gap-3">
               <div className="easyleap-flex easyleap-flex-col easyleap-items-center">
                 <div
                   className={cn(
@@ -112,32 +112,32 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
                   )}
                 >
                   {status === "completed" ? (
-                    <CheckCircle2 className="easyleap-size-5" />
+                    <CheckCircle2 className="easyleap-size-4 md:easyleap-size-5" />
                   ) : status === "current" ? (
-                    <Loader2 className="easyleap-size-5 easyleap-animate-spin" />
+                    <Loader2 className="easyleap-size-4 md:easyleap-size-5 easyleap-animate-spin" />
                   ) : (
-                    <Circle className="easyleap-size-5" />
+                    <Circle className="easyleap-size-4 md:easyleap-size-5" />
                   )}
                 </div>
                 {!isLast && (
                   <div
                     className={cn(
-                      "easyleap-w-0.5 easyleap-flex-1 easyleap-min-h-[60px]",
+                      "easyleap-w-0.5 easyleap-flex-1 easyleap-min-h-[50px] md:easyleap-min-h-[60px]",
                       status === "completed" ? "easyleap-bg-green-500" : "easyleap-bg-gray-200",
                     )}
                   />
                 )}
               </div>
 
-              <div className="easyleap-flex-1 easyleap-pb-6">
+              <div className="easyleap-flex-1 easyleap-pb-5 md:easyleap-pb-6">
                 <div className="easyleap-flex easyleap-items-start easyleap-justify-between">
-                  <h4 className="easyleap-text-sm easyleap-font-semibold">{step.title}</h4>
+                  <h4 className="easyleap-text-xs md:easyleap-text-sm easyleap-font-semibold">{step.title}</h4>
                   {step.link && (
                     <a
                       href={step.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="easyleap-text-blue-500 hover:easyleap-text-blue-600 easyleap-flex easyleap-items-center easyleap-gap-1 easyleap-text-xs"
+                      className="easyleap-text-blue-500 hover:easyleap-text-blue-600 easyleap-flex easyleap-items-center easyleap-gap-1 easyleap-text-[10px] md:easyleap-text-xs"
                     >
                       View
                       <ExternalLink className="easyleap-size-3" />
@@ -145,14 +145,14 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
                   )}
                 </div>
                 <p
-                  className="easyleap-text-xs easyleap-mt-1"
+                  className="easyleap-text-[10px] md:easyleap-text-xs easyleap-mt-1"
                   style={{ color: cd?.mutedTextColor || "#666" }}
                 >
                   {step.description}
                 </p>
                 {step.estimatedTime && status === "current" && (
                   <p
-                    className="easyleap-text-xs easyleap-mt-1 easyleap-font-medium"
+                    className="easyleap-text-[10px] md:easyleap-text-xs easyleap-mt-1 easyleap-font-medium"
                     style={{ color: cd?.mutedTextColor || "#666" }}
                   >
                     {step.estimatedTime}
@@ -166,7 +166,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
 
       {depositProgress.depositState === DepositState.ERROR && (
         <div
-          className="easyleap-p-4 easyleap-rounded-lg easyleap-text-center easyleap-text-sm easyleap-text-red-500"
+          className="easyleap-p-3 md:easyleap-p-4 easyleap-rounded-lg easyleap-text-center easyleap-text-xs md:easyleap-text-sm easyleap-text-red-500"
           style={{ backgroundColor: "#fee" }}
         >
           Transaction failed. Please try again.
@@ -176,7 +176,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
       {depositProgress.depositState === DepositState.COMPLETED && (
         <Button
           onClick={onClose}
-          className="easyleap-w-full easyleap-font-semibold"
+          className="easyleap-w-full easyleap-h-[48px] md:easyleap-h-[56px] easyleap-text-sm md:easyleap-text-base easyleap-font-semibold"
           style={{
             backgroundColor: cd?.accent || "#0ea5e9",
             color: cd?.accentForeground || "#fff",

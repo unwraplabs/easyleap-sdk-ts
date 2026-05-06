@@ -247,8 +247,6 @@ export function EasyleapProvider(
                             config={{
                                 rpcUrl: starkzapRpcUrl,
                                 network: starkzapNetwork,
-                                ethereumRpcUrl,
-                                layerZeroApiKey,
                             }}
                         >
                             <BridgeStarkzapContextProvider
