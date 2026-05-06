@@ -13,6 +13,8 @@ import { logger } from "@lib/utils/logger";
 export interface PrivyProviderConfig {
   rpcUrl: string;
   network: "mainnet" | "sepolia";
+  ethereumRpcUrl: string;
+  layerZeroApiKey?: string;
 }
 
 export interface PrivyWalletData {
@@ -152,11 +154,8 @@ export const PrivyContextProvider: React.FC<{
           },
         },
         bridging: {
-          ethereumRpcUrl:
-            // TODO: put em in env later
-            config.network === "mainnet"
-              ? "https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1"
-              : "https://eth-sepolia.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1",
+          ethereumRpcUrl: config.ethereumRpcUrl,
+          layerZeroApiKey: config.layerZeroApiKey,
         },
       });
 

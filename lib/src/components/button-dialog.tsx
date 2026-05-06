@@ -596,11 +596,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     const starknetConnectorName = connectedSnConnector?.name;
 
     const onDisconnectEvmSideEffects = () => {
-        if (!starknetAddress) {
-            sharedState.setMode(InteractionMode.None);
-        } else {
-            sharedState.setMode(InteractionMode.Starknet);
-        }
+        // Don't manually set mode here - let useAccount hook handle it automatically
+        // The mode will be set based on remaining connected wallets
     };
 
     const modalShellStyle: React.CSSProperties = {
@@ -771,6 +768,34 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                     >
                                         {shortAddress(evmAddress, 4, 4)}
                                     </button>
+                                </Button>
+                            )}
+
+                            { /*TODO: temp fix if a person alerady connected their eth wallet in the bridge mode, 
+                                REFAC: Make sure that evm wallet is also disconnected and mode is set to none and evm address is also set to null.  */}
+
+                            {mode === InteractionMode.None && evmAddress && (
+                                <Button
+                                    variant="outline"
+                                    style={{
+                                        color:
+                                            style?.buttonStyles?.color ||
+                                            theme?.noneMode?.color,
+                                        backgroundColor:
+                                            style?.buttonStyles
+                                                ?.backgroundColor ||
+                                            theme?.noneMode?.backgroundColor,
+                                        border:
+                                            style?.buttonStyles?.border ||
+                                            theme?.noneMode?.border,
+                                        ...style?.buttonStyles
+                                    }}
+                                    className={cn(
+                                        "easyleap-rounded-[50px] easyleap-text-center easyleap-text-white easyleap-h-full",
+                                        className
+                                    )}
+                                >
+                                    Connect wallet
                                 </Button>
                             )}
                         </div>

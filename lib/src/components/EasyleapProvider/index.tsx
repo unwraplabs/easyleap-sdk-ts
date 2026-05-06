@@ -21,6 +21,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import type { PrivyClientConfig } from "@privy-io/react-auth";
 
 import { Toaster } from "@lib/components/ui/toaster";
+import { BridgeStarkzapContextProvider } from "@lib/contexts/BridgeStarkzapContext";
 import { SharedStateProvider } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
 import { PrivyContextProvider } from "@lib/contexts/PrivyContext";
@@ -49,6 +50,9 @@ export interface EasyleapConfig {
     starkzap?: {
         rpcUrl?: string;
         network?: "mainnet" | "sepolia";
+        ethereumRpcUrl?: string;
+        layerZeroApiKey?: string;
+        bridgePrivateKey?: string;
     };
     /**
      * UI feature flags. Defaults preserve existing behavior.
@@ -170,6 +174,67 @@ export function EasyleapProvider(
         );
     }, [props.starkzap?.rpcUrl]);
 
+    const starkzapNetwork = React.useMemo(() => {
+        return (
+            props.starkzap?.network ??
+            ((readEnv("NEXT_PUBLIC_CHAIN_ID") ?? readEnv("VITE_CHAIN_ID")) ===
+            "SN_MAIN"
+                ? "mainnet"
+                : "sepolia")
+        );
+    }, [props.starkzap?.network]);
+
+    const ethereumRpcUrl = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.ethereumRpcUrl === "string"
+                ? props.starkzap.ethereumRpcUrl.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_ETHEREUM_RPC_URL") ??
+            readEnv("VITE_ETHEREUM_RPC_URL");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing Ethereum RPC url. Provide `starkzap.ethereumRpcUrl` or set NEXT_PUBLIC_ETHEREUM_RPC_URL / VITE_ETHEREUM_RPC_URL."
+        );
+    }, [props.starkzap?.ethereumRpcUrl]);
+
+    const layerZeroApiKey = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.layerZeroApiKey === "string"
+                ? props.starkzap.layerZeroApiKey.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_LAYERZERO_API_KEY") ??
+            readEnv("VITE_LAYERZERO_API_KEY");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing LayerZero API key. Provide `starkzap.layerZeroApiKey` or set NEXT_PUBLIC_LAYERZERO_API_KEY / VITE_LAYERZERO_API_KEY."
+        );
+    }, [props.starkzap?.layerZeroApiKey]);
+
+    const bridgePrivateKey = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.bridgePrivateKey === "string"
+                ? props.starkzap.bridgePrivateKey.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_BRIDGE_PRIVATE_KEY") ??
+            readEnv("VITE_BRIDGE_PRIVATE_KEY");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing bridge private key. Provide `starkzap.bridgePrivateKey` or set NEXT_PUBLIC_BRIDGE_PRIVATE_KEY / VITE_BRIDGE_PRIVATE_KEY."
+        );
+    }, [props.starkzap?.bridgePrivateKey]);
+
     return (
         <SharedStateProvider ui={props.ui}>
             <ThemeProvider theme={props.theme}>
@@ -181,27 +246,34 @@ export function EasyleapProvider(
                         <PrivyContextProvider
                             config={{
                                 rpcUrl: starkzapRpcUrl,
-                                network:
-                                    props.starkzap?.network ??
-                                    ((readEnv("NEXT_PUBLIC_CHAIN_ID") ??
-                                        readEnv("VITE_CHAIN_ID")) === "SN_MAIN"
-                                        ? "mainnet"
-                                        : "sepolia"),
+                                network: starkzapNetwork,
+                                ethereumRpcUrl,
+                                layerZeroApiKey,
                             }}
                         >
-                            <WagmiProvider config={wagmiConfig}>
-                                <StarknetConfig
-                                    chains={starknetConfig.chains || [mainnet]}
-                                    provider={starknetConfig.provider}
-                                    explorer={starknetConfig.explorer}
-                                    connectors={
-                                        starknetConfig?.connectors || []
-                                    }
-                                >
-                                    {props.children}
-                                    <Toaster />
-                                </StarknetConfig>
-                            </WagmiProvider>
+                            <BridgeStarkzapContextProvider
+                                config={{
+                                    rpcUrl: starkzapRpcUrl,
+                                    network: starkzapNetwork,
+                                    ethereumRpcUrl,
+                                    layerZeroApiKey,
+                                    privateKey: bridgePrivateKey,
+                                }}
+                            >
+                                <WagmiProvider config={wagmiConfig}>
+                                    <StarknetConfig
+                                        chains={starknetConfig.chains || [mainnet]}
+                                        provider={starknetConfig.provider}
+                                        explorer={starknetConfig.explorer}
+                                        connectors={
+                                            starknetConfig?.connectors || []
+                                        }
+                                    >
+                                        {props.children}
+                                        <Toaster />
+                                    </StarknetConfig>
+                                </WagmiProvider>
+                            </BridgeStarkzapContextProvider>
                         </PrivyContextProvider>
                     </PrivyProvider>
                 </QueryClientProvider>
