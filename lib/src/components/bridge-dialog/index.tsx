@@ -43,18 +43,17 @@ const ConnectRow: React.FC<{
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-justify-between easyleap-rounded-[14px] easyleap-border easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4 easyleap-transition-colors hover:easyleap-border-[#cbd0d5] disabled:easyleap-opacity-50"
-    style={{ borderColor: "#e5e8eb", backgroundColor: "#fff" }}
+    className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button disabled:easyleap-opacity-50"
+    style={{
+      border: "1px solid #e5e8eb",
+      backgroundColor: "#fff",
+      color: "#000",
+    }}
   >
-    <span
-      className="easyleap-text-xs md:easyleap-text-sm easyleap-font-medium"
-      style={{ color: "#000", letterSpacing: "-0.31px" }}
-    >
-      {label}
-    </span>
-    <span className="easyleap-flex easyleap-items-center easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
+    <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
       {icon}
     </span>
+    {label}
   </button>
 );
 
@@ -169,7 +168,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                   Receiving on Starknet wallet
                 </span>
                 <span
-                  className="easyleap-text-sm md:easyleap-text-md easyleap-font-inter"
+                  className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
                   style={{ color: "#101828", letterSpacing: "-0.44px" }}
                 >
                   {starknetAddress
@@ -223,7 +222,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           {walletLabel(String(evmConnector?.name ?? "EVM"))}
                         </span>
                         <span
-                          className="easyleap-text-sm md:easyleap-text-md easyleap-font-inter"
+                          className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
                           style={{
                             // TODO: make color dynamic
                             color: "#101828",

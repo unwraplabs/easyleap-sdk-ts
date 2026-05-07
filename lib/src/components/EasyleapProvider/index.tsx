@@ -6,7 +6,6 @@ import {
     voyager
 } from "@starknet-react/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getDefaultConfig } from "connectkit";
 import React from "react";
 import { mainnet as mainnetEVM, sepolia as sepoliaEVM } from "viem/chains";
 import {
@@ -17,6 +16,7 @@ import {
     Config as WagmiConfig,
     WagmiProvider
 } from "wagmi";
+import { coinbaseWallet, walletConnect } from "wagmi/connectors";
 import { PrivyProvider } from "@privy-io/react-auth";
 import type { PrivyClientConfig } from "@privy-io/react-auth";
 
@@ -76,39 +76,36 @@ const defaultQueryClient = new QueryClient({
 
 export function defaultEasyleapConfig() {
     return {
-        wagmiConfig: createConfig(
-            getDefaultConfig({
-                // Your dApps chains
-                chains: [mainnetEVM, sepoliaEVM],
-                transports: {
-                    // RPC URL for each chain
-                    [mainnetEVM.id]: http(
-                        `https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
-                    ),
-                    [sepoliaEVM.id]: http(
-                        `https://eth-sepolia.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
-                    )
-                },
-
-                // Server Side Rendering
-                ssr: true,
-
-                // Enable persistence
-                storage: createStorage({ storage: cookieStorage }),
-
-                // Required API Keys
-                walletConnectProjectId: WALLET_CONNECT_DEFAULT_PROJECT_ID,
-
-                // Required App Info
-                appName: "Easyleap",
-
-                // Optional App Info
-                appDescription:
-                    "Bridge funds to Starknet dApps in a single click",
-                appUrl: "https://easyleap.com", // your app's url
-                appIcon: "https://easyleap.com/logo.png" // your app's icon, no bigger than 1024x1024px (max. 1MB)
-            })
-        ),
+        wagmiConfig: createConfig({
+            chains: [mainnetEVM, sepoliaEVM],
+            transports: {
+                [mainnetEVM.id]: http(
+                    `https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
+                ),
+                [sepoliaEVM.id]: http(
+                    `https://eth-sepolia.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
+                )
+            },
+            connectors: [
+               walletConnect({
+                    projectId: WALLET_CONNECT_DEFAULT_PROJECT_ID,
+                    // TODO: putting on endur, will make dynamic later on
+                    metadata: {
+                        name: "Endur",
+                        description: "Bridge funds to Starknet dApps in a single click",
+                        url: "https://endur.fi",
+                        icons: ["https://endur.fi/logo.png"]
+                    },
+                    showQrModal: true,
+                }),
+                coinbaseWallet({
+                    appName: "Endur",
+                    appLogoUrl: "https://endur.fi/logo.png",
+                }),
+            ],
+            ssr: true,
+            storage: createStorage({ storage: cookieStorage }),
+        }),
         starknetConfig: {
             chains: [mainnet, sepolia],
             provider: publicProvider(),

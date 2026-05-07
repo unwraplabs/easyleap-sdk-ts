@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import {
   useAccount as useAccountWagmi,
@@ -34,6 +34,32 @@ interface UseBridgeDialogOptions {
 
 const TROVES_PRICE_API_ENDPOINT = "https://proxy.api.troves.fi";
 
+async function fetchEthSpotPrice(): Promise<number | null> {
+  try {
+    const ethPriceUrl = `${TROVES_PRICE_API_ENDPOINT}/api/price/ETH`;
+    const ethPriceResponse = await fetch(ethPriceUrl);
+    if (!ethPriceResponse.ok) return null;
+    const ethPricePayload: unknown = await ethPriceResponse.json();
+    const ethPrice = extractPriceFromPayload(ethPricePayload);
+    return Number.isFinite(ethPrice) && ethPrice > 0 ? ethPrice : null;
+  } catch {
+    return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function pickBridgeTokenForAsset(ethereumTokens: any[], assetSymbol: string): any | null {
+  const assetTokens = ethereumTokens.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- StarkZap BridgeToken shape
+    (t: any) => t.symbol.toLowerCase() === assetSymbol.toLowerCase(),
+  );
+  if (assetTokens.length === 0) return null;
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- StarkZap BridgeToken shape
+    assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) || assetTokens[0] || null
+  );
+}
+
 export function useBridgeDialog({
   lstConfig,
   onBridgeSuccess,
@@ -49,10 +75,18 @@ export function useBridgeDialog({
   const [depositInfo, setDepositInfo] = useState<DepositInfo>({});
   const [depositProgress, setDepositProgress] = useState<DepositProgress | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedToken, setSelectedToken] = useState<any>(null);
+  const [ethereumBridgeTokens, setEthereumBridgeTokens] = useState<any[] | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<LSTAssetConfig>(lstConfig[0]);
   const [isAssetSelectorOpen, setIsAssetSelectorOpen] = useState(false);
   const [assetPriceUsd, setAssetPriceUsd] = useState<number | null>(null);
+  const depositInfoRequestIdRef = useRef(0);
+
+  // Derived synchronously when the cached list or asset changes — avoids stale-token fetches.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selectedToken: any | null = React.useMemo(() => {
+    if (!ethereumBridgeTokens?.length) return null;
+    return pickBridgeTokenForAsset(ethereumBridgeTokens, selectedAsset.SYMBOL);
+  }, [ethereumBridgeTokens, selectedAsset]);
 
   const { starkzapBridgeWallet, starkzapBridgeSDK } = useBridgeStarkzapContext();
   const theme = useTheme();
@@ -78,13 +112,19 @@ export function useBridgeDialog({
   const fetchDepositInfo = React.useCallback(async (token: any) => {
     if (!evmWalletForBridge || !starkzapBridgeWallet) return;
 
+    const requestId = ++depositInfoRequestIdRef.current;
     setIsLoadingInfo(true);
     try {
-      const balance = await starkzapBridgeWallet.getDepositBalance(token, evmWalletForBridge);
-      const allowance = await starkzapBridgeWallet.getAllowance(token, evmWalletForBridge);
-      const fees = await starkzapBridgeWallet.getDepositFeeEstimate(token, evmWalletForBridge, {
-        fastTransfer: true,
-      });
+      const [balance, allowance, fees, ethPrice] = await Promise.all([
+        starkzapBridgeWallet.getDepositBalance(token, evmWalletForBridge),
+        starkzapBridgeWallet.getAllowance(token, evmWalletForBridge),
+        starkzapBridgeWallet.getDepositFeeEstimate(token, evmWalletForBridge, {
+          fastTransfer: true,
+        }),
+        fetchEthSpotPrice(),
+      ]);
+
+      if (requestId !== depositInfoRequestIdRef.current) return;
 
       let totalFeeAmount: Amount;
       if ("l1Fee" in fees && "l2Fee" in fees) {
@@ -95,22 +135,12 @@ export function useBridgeDialog({
         totalFeeAmount = Amount.parse("0", 18, "ETH");
       }
 
-      // Fetch ETH price to calculate USD value of gas fees
       let feeUsdValue = "$0.00";
-      try {
-        const ethPriceUrl = `${TROVES_PRICE_API_ENDPOINT}/api/price/ETH`;
-        const ethPriceResponse = await fetch(ethPriceUrl);
-        if (ethPriceResponse.ok) {
-          const ethPricePayload: unknown = await ethPriceResponse.json();
-          const ethPrice = extractPriceFromPayload(ethPricePayload);
-          if (Number.isFinite(ethPrice) && ethPrice > 0) {
-            const feeInEth = parseFloat(totalFeeAmount.toUnit());
-            const feeUsd = feeInEth * ethPrice;
-            feeUsdValue = `$${feeUsd.toFixed(2)}`;
-          }
+      if (ethPrice !== null) {
+        const feeInEth = parseFloat(totalFeeAmount.toUnit());
+        if (Number.isFinite(feeInEth)) {
+          feeUsdValue = `$${(feeInEth * ethPrice).toFixed(2)}`;
         }
-      } catch (ethPriceError) {
-        console.error("Failed to fetch ETH price for fee calculation:", ethPriceError);
       }
 
       setDepositInfo({
@@ -124,7 +154,9 @@ export function useBridgeDialog({
     } catch (error) {
       console.error("Failed to fetch deposit info:", error);
     } finally {
-      setIsLoadingInfo(false);
+      if (requestId === depositInfoRequestIdRef.current) {
+        setIsLoadingInfo(false);
+      }
     }
   }, [evmWalletForBridge, starkzapBridgeWallet]);
 
@@ -242,18 +274,6 @@ export function useBridgeDialog({
         );
 
         setEvmWalletForBridge(ethWallet);
-
-        if (starkzapBridgeSDK && !selectedToken && selectedAsset) {
-          const ethereumTokens = await starkzapBridgeSDK.getBridgingTokens(ExternalChain.ETHEREUM);
-          const assetTokens = ethereumTokens.filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (t: any) => t.symbol.toLowerCase() === selectedAsset.SYMBOL.toLowerCase(),
-          );
-          const assetToken =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) || assetTokens[0];
-          if (assetToken) setSelectedToken(assetToken);
-        }
       } catch (error) {
         console.error("Failed to create ConnectedEthereumWallet:", error);
         toast({
@@ -264,8 +284,7 @@ export function useBridgeDialog({
     };
 
     setupEvmWallet();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evmAddress, evmConnector, starkzapBridgeWallet, starkzapBridgeSDK, selectedAsset.SYMBOL]);
+  }, [evmAddress, evmConnector, starkzapBridgeWallet]);
 
   // Close dialog and reset state when Starknet wallet disconnects
   useEffect(() => {
@@ -278,35 +297,40 @@ export function useBridgeDialog({
     }
   }, [effectiveStarknetAddress, open]);
 
-  // Fetch deposit info when token changes
+  // Cache Ethereum bridge tokens once per SDK + EVM wallet; asset switches only re-pick from this list.
   useEffect(() => {
-    if (selectedToken && evmWalletForBridge && starkzapBridgeWallet && selectedAsset) {
-      fetchDepositInfo(selectedToken);
+    if (!starkzapBridgeSDK || !evmWalletForBridge) {
+      setEthereumBridgeTokens(null);
+      return;
     }
-  }, [selectedToken, evmWalletForBridge, starkzapBridgeWallet, selectedAsset, fetchDepositInfo]);
 
-  // Load bridging token when asset selection changes
-  useEffect(() => {
-    const loadTokenForAsset = async () => {
-      if (!starkzapBridgeSDK || !evmWalletForBridge || !selectedAsset) return;
+    let cancelled = false;
 
+    const load = async () => {
       try {
-        const ethereumTokens = await starkzapBridgeSDK.getBridgingTokens(ExternalChain.ETHEREUM);
-        const assetTokens = ethereumTokens.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (t: any) => t.symbol.toLowerCase() === selectedAsset.SYMBOL.toLowerCase(),
-        );
-        const assetToken =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) || assetTokens[0];
-        if (assetToken) setSelectedToken(assetToken);
+        const list = await starkzapBridgeSDK.getBridgingTokens(ExternalChain.ETHEREUM);
+        if (!cancelled) setEthereumBridgeTokens(list);
       } catch (error) {
-        console.error("Failed to load token for asset:", error);
+        console.error("Failed to load Ethereum bridge tokens:", error);
+        if (!cancelled) setEthereumBridgeTokens(null);
       }
     };
 
-    loadTokenForAsset();
-  }, [selectedAsset, starkzapBridgeSDK, evmWalletForBridge]);
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [starkzapBridgeSDK, evmWalletForBridge]);
+
+  // Fetch deposit info when the resolved token or wallet changes (not on selectedAsset alone).
+  useEffect(() => {
+    if (!selectedToken || !evmWalletForBridge || !starkzapBridgeWallet) {
+      setDepositInfo({});
+      setIsLoadingInfo(false);
+      return;
+    }
+    void fetchDepositInfo(selectedToken);
+  }, [selectedToken, evmWalletForBridge, starkzapBridgeWallet, fetchDepositInfo]);
 
   const handleDisconnectEvm = () => {
     disconnectWagmi();
@@ -356,20 +380,11 @@ export function useBridgeDialog({
     setIsBridging(true);
 
     try {
-      if (!starkzapBridgeSDK) throw new Error("StarkZap SDK not available");
-
-      const ethereumTokens = await starkzapBridgeSDK.getBridgingTokens(ExternalChain.ETHEREUM);
-      const assetTokens = ethereumTokens.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (t: any) => t.symbol.toLowerCase() === selectedAsset.SYMBOL.toLowerCase(),
-      );
-      const assetToken =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) || assetTokens[0];
-
-      if (!assetToken) {
-        throw new Error(`${selectedAsset.SYMBOL} token not found in bridging tokens`);
+      if (!selectedToken) {
+        throw new Error(`${selectedAsset.SYMBOL} token not ready — try reconnecting your ETH wallet`);
       }
+
+      const assetToken = selectedToken;
 
       const depositAmount = Amount.parse(amount, assetToken.decimals, assetToken.symbol);
       // `useAccount` returns a hex string type; StarkZap expects branded address type.

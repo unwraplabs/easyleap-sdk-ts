@@ -9,12 +9,35 @@ import { BRIDGE_STATUS_ORDER } from "./constants";
 export const walletLabel = (name: string) =>
   name.toLowerCase().includes("wallet") ? name : `${name} wallet`;
 
+const WALLET_ICON_CLASS = "easyleap-size-8 easyleap-p-1";
+
+const WALLET_ICON_MATCHERS: Array<[string, keyof typeof Icons]> = [
+  ["metamask", "metamask"],
+  ["coinbase", "coinbase"],
+  ["walletconnect", "walletConnect"],
+  ["trust", "trust"],
+  ["rainbow", "rainbow"],
+  ["phantom", "phantom"],
+  ["okx", "okxwallet"],
+  ["brave", "brave"],
+  ["rabby", "rabby"],
+];
+
 export const getWalletIcon = (walletId: string): React.ReactNode => {
-  const id = walletId.toLowerCase();
-  if (id.includes("metamask")) return <Icons.metamask className="easyleap-size-5" />;
-  if (id.includes("coinbase")) return <Icons.coinbase className="easyleap-size-5" />;
-  if (id.includes("walletconnect")) return <Icons.walletConnect className="easyleap-size-5" />;
-  return <Icons.metamask className="easyleap-size-5" />;
+  const id = walletId.toLowerCase().replace(/[\s_-]/g, "");
+  
+  console.log("getWalletIcon - original:", walletId, "transformed:", id);
+
+  for (const [matcher, iconName] of WALLET_ICON_MATCHERS) {
+    if (id.includes(matcher)) {
+      console.log("getWalletIcon - matched:", matcher, "icon:", iconName);
+      const WalletIcon = Icons[iconName];
+      return <WalletIcon className={WALLET_ICON_CLASS} />;
+    }
+  }
+
+  console.log("getWalletIcon - no match, using default wallet icon");
+  return <Icons.wallet className={WALLET_ICON_CLASS} />;
 };
 
 const ASSET_ICON_PATHS: Record<string, string> = {
