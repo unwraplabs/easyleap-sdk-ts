@@ -41,6 +41,7 @@ export const getWalletIcon = (walletId: string): React.ReactNode => {
 };
 
 const ASSET_ICON_PATHS: Record<string, string> = {
+  STRK: "/strk.svg",
   WBTC: "/wbtc.svg",
   TBTC: "/tbtc.svg",
   TBTC1: "/tbtc.svg",

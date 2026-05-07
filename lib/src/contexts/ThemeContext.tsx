@@ -104,39 +104,91 @@ export interface GlobalTheme {
 
   /** Bridge dialog colors */
   bridgeDialog?: {
-    modalBackground?: string;
+    // Base colors
+    // TODO: when doing for Troves we will rename to brandMain or use brandPurple for Troves
+    white?: string;
+    black?: string;
+    brandGreen?: string;
+    brandGreenHover?: string;
+    brandGreenActive?: string;
+    brandGreenDark?: string;
+    brandGreenDarker?: string;
+    brandGreenLight?: string;
+    
+    // Gray scale
+    gray50?: string;
+    gray100?: string;
+    gray200?: string;
+    gray300?: string;
+    gray350?: string;
+    gray400?: string;
+    gray500?: string;
+    gray600?: string;
+    gray700?: string;
+    gray800?: string;
+    gray900?: string;
+    gray1000?: string;
+    gray1100?: string;
+    gray1200?: string;
+    
+    // Border colors
+    iconBorderColor?: string;
+    cardHoverBackground?: string;
     modalBorder?: string;
     modalBorderRadius?: string;
-    titleColor?: string;
-    infoBackgroundColor?: string;
-    infoTextColor?: string;
-    mutedTextColor?: string;
-    primaryTextColor?: string;
-    darkTextColor?: string;
-    borderColor?: string;
-    borderHoverColor?: string;
-    focusBorderColor?: string;
-    primaryButtonBackground?: string;
-    primaryButtonHoverBackground?: string;
-    primaryButtonActiveBackground?: string;
-    disabledButtonBackground?: string;
-    percentageButtonBackground?: string;
-    percentageButtonHoverBackground?: string;
-    percentageButtonTextColor?: string;
-    percentageButtonHoverTextColor?: string;
-    dropdownBackground?: string;
-    dropdownBorder?: string;
-    dropdownItemBackground?: string;
-    dropdownItemHoverBackground?: string;
-    dropdownItemHoverTextColor?: string;
-    dropdownHoverBackground?: string;
-    dropdownHoverTextColor?: string;
-    summaryLabelColor?: string;
-    walletConnectRowBorder?: string;
-    walletConnectRowBackground?: string;
-    walletConnectRowTextColor?: string;
-    iconBorderColor?: string;
-    inputPlaceholderColor?: string;
+    providerExternalIconOpacity?: number;
+    providerExternalIconHoverOpacity?: number;
+
+    
+    // Component-specific aliases (currently unused in bridge-dialog views)
+    // modalBackground?: string;
+    // modalBorder?: string;
+    // modalBorderRadius?: string;
+    // titleColor?: string;
+    // infoBackgroundColor?: string;
+    // infoTextColor?: string;
+    // mutedTextColor?: string;
+    // primaryTextColor?: string;
+    // darkTextColor?: string;
+    // borderColor?: string;
+    // borderHoverColor?: string;
+    // focusBorderColor?: string;
+    // primaryButtonBackground?: string;
+    // primaryButtonHoverBackground?: string;
+    // primaryButtonActiveBackground?: string;
+    // disabledButtonBackground?: string;
+    // percentageButtonBackground?: string;
+    // percentageButtonHoverBackground?: string;
+    // percentageButtonTextColor?: string;
+    // percentageButtonHoverTextColor?: string;
+    // dropdownBackground?: string;
+    // dropdownBorder?: string;
+    // dropdownItemBackground?: string;
+    // dropdownItemHoverBackground?: string;
+    // dropdownItemHoverTextColor?: string;
+    // dropdownHoverBackground?: string;
+    // dropdownHoverTextColor?: string;
+    // summaryLabelColor?: string;
+    // walletConnectRowBorder?: string;
+    // walletConnectRowBackground?: string;
+    // walletConnectRowTextColor?: string;
+    // inputPlaceholderColor?: string;
+    // assetChipBackground?: string;
+    // assetChipBorderColor?: string;
+    // assetChipTextColor?: string;
+    // assetChipHoverBackground?: string;
+    // assetChipHoverBorderColor?: string;
+    // assetChipSelectedBackground?: string;
+    // assetChipSelectedTextColor?: string;
+    // providerCardBorderColor?: string;
+    // providerCardHoverBorderColor?: string;
+    // providerCardBackground?: string;
+    // providerCardHoverBackground?: string;
+    // providerCardStarkgateBackground?: string;
+    // providerCardStarkgateHoverBackground?: string;
+    // providerNameColor?: string;
+    // providerExternalIconOpacity?: number;
+    // providerExternalIconHoverOpacity?: number;
   };
 }
 
@@ -208,39 +260,86 @@ const defaultTheme: GlobalTheme = {
   },
 
   bridgeDialog: {
-    modalBackground: "#fff",
-    modalBorder: "1px solid #e5e8eb",
-    modalBorderRadius: "10px",
-    titleColor: "#03624c",
-    infoBackgroundColor: "#e8f5f1",
-    infoTextColor: "#03624c",
-    mutedTextColor: "#6b7780",
-    primaryTextColor: "#101828",
-    darkTextColor: "#1a1f24",
-    borderColor: "#e5e8eb",
-    borderHoverColor: "#cbd0d5",
-    focusBorderColor: "#17876d",
-    primaryButtonBackground: "#17876d",
-    primaryButtonHoverBackground: "#14755f",
-    primaryButtonActiveBackground: "#116652",
-    disabledButtonBackground: "#C9D1D6",
-    percentageButtonBackground: "#f5f7f8",
-    percentageButtonHoverBackground: "#ebeef0",
-    percentageButtonTextColor: "#6b7780",
-    percentageButtonHoverTextColor: "#4a5565",
-    dropdownBackground: "#fff",
-    dropdownBorder: "#e5e8eb",
-    dropdownItemBackground: "#fff",
-    dropdownItemHoverBackground: "#ebeef0",
-    dropdownItemHoverTextColor: "#1a1f24",
-    dropdownHoverBackground: "#ebeef0",
-    dropdownHoverTextColor: "#1a1f24",
-    summaryLabelColor: "#0d5f4e",
-    walletConnectRowBorder: "1px solid #e5e8eb",
-    walletConnectRowBackground: "#fff",
-    walletConnectRowTextColor: "#000",
+    // Base colors
+    white: "#FFFFFF",
+    black: "#000000",
+    brandGreen: "#17876D",
+    brandGreenHover: "#14755F",
+    brandGreenActive: "#116652",
+    brandGreenDark: "#03624C",
+    brandGreenDarker: "#0D5F4E",
+    brandGreenLight: "#E8F5F1",
+    
+    // Gray scale
+    gray50: "#F9FAFB",
+    gray100: "#F5F7F8",
+    gray200: "#EBEEF0",
+    gray300: "#E5E8EB",
+    gray350: "#E5E7EB",
+    gray400: "#D1D5DC",
+    gray500: "#CBD0D5",
+    gray600: "#C9D1D6",
+    gray700: "#9CA3AF",
+    gray800: "#8D9C9C",
+    gray900: "#6B7780",
+    gray1000: "#4A5565",
+    gray1100: "#1A1F24",
+    gray1200: "#101828",
+    
+    // Border colors
     iconBorderColor: "#DBDBDB",
-    inputPlaceholderColor: "#8D9C9C"
+    cardHoverBackground: "#FAFBFC",
+    
+    modalBorder: "1px solid #ECECED80",
+    modalBorderRadius: "10px",
+    providerExternalIconOpacity: 0.4,
+    providerExternalIconHoverOpacity: 0.7,
+
+    // Component-specific aliases using base colors (currently unused in bridge-dialog views)
+    // modalBackground: "#FFFFFF", // white
+    // titleColor: "#03624C", // brandGreenDark
+    // infoBackgroundColor: "#E8F5F1", // brandGreenLight
+    // infoTextColor: "#03624C", // brandGreenDark
+    // mutedTextColor: "#6B7780", // gray900
+    // primaryTextColor: "#101828", // gray1200
+    // darkTextColor: "#1A1F24", // gray1100
+    // borderColor: "#E5E8EB", // gray300
+    // borderHoverColor: "#CBD0D5", // gray500
+    // focusBorderColor: "#17876D", // brandGreen
+    // primaryButtonBackground: "#17876D", // brandGreen
+    // primaryButtonHoverBackground: "#14755F", // brandGreenHover
+    // primaryButtonActiveBackground: "#116652", // brandGreenActive
+    // disabledButtonBackground: "#C9D1D6", // gray600
+    // percentageButtonBackground: "#F5F7F8", // gray100
+    // percentageButtonHoverBackground: "#EBEEF0", // gray200
+    // percentageButtonTextColor: "#6B7780", // gray900
+    // percentageButtonHoverTextColor: "#4A5565", // gray1000
+    // dropdownBackground: "#FFFFFF", // white
+    // dropdownBorder: "#E5E8EB", // gray300
+    // dropdownItemBackground: "#FFFFFF", // white
+    // dropdownItemHoverBackground: "#EBEEF0", // gray200
+    // dropdownItemHoverTextColor: "#1A1F24", // gray1100
+    // dropdownHoverBackground: "#EBEEF0", // gray200
+    // dropdownHoverTextColor: "#1A1F24", // gray1100
+    // summaryLabelColor: "#0D5F4E", // brandGreenDarker
+    // walletConnectRowBorder: "1px solid #E5E8EB", // gray300
+    // walletConnectRowBackground: "#FFFFFF", // white
+    // walletConnectRowTextColor: "#000000", // black
+    // inputPlaceholderColor: "#8D9C9C", // gray800
+    // assetChipBackground: "#FFFFFF", // white
+    // assetChipBorderColor: "#D1D5DC", // gray400
+    // assetChipTextColor: "#1A1F24", // gray1100
+    // assetChipHoverBackground: "#F9FAFB", // gray50
+    // assetChipHoverBorderColor: "#9CA3AF", // gray700
+    // assetChipSelectedBackground: "#17876D", // brandGreen
+    // assetChipSelectedTextColor: "#FFFFFF", // white
+    // providerCardBorderColor: "#E5E7EB", // gray350
+    // providerCardHoverBorderColor: "#D1D5DC", // gray400
+    // providerCardBackground: "#FFFFFF", // white
+    // providerCardHoverBackground: "#FAFBFC", // cardHoverBackground
+    // providerCardStarkgateBackground: "#E8F5F1", // brandGreenLight
+    // providerCardStarkgateHoverBackground: "#E8F5F1", // brandGreenLight
+    // providerNameColor: "#101828", // gray1200
   },
 
   // BRIDGE MODE - bridgeMode default theme commented out

@@ -4,6 +4,15 @@ import { LSTAssetConfig } from "./types";
 
 export const DEFAULT_LST_CONFIGS: LSTAssetConfig[] = [
   {
+    SYMBOL: "STRK",
+    ASSET_ADDRESS:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    LST_SYMBOL: "xSTRK",
+    DECIMALS: 18,
+    CATEGORY: "STRK",
+    DISPLAY_NAME: "Starknet Token",
+  },
+  {
     SYMBOL: "WBTC",
     ASSET_ADDRESS: "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
     LST_SYMBOL: "xWBTC",

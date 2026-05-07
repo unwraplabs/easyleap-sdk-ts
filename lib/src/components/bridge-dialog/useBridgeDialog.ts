@@ -83,8 +83,16 @@ export function useBridgeDialog({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any[] | null
   >(null);
+  const getDefaultSelectedAsset = React.useCallback((): LSTAssetConfig => {
+    return (
+      lstConfig.find(
+        (asset) => asset.SYMBOL.toLowerCase() === "wbtc".toLowerCase(),
+      ) ?? lstConfig[0]
+    );
+  }, [lstConfig]);
+
   const [selectedAsset, setSelectedAsset] = useState<LSTAssetConfig>(
-    lstConfig[0],
+    getDefaultSelectedAsset,
   );
   const [isAssetSelectorOpen, setIsAssetSelectorOpen] = useState(false);
   const [assetPriceUsd, setAssetPriceUsd] = useState<number | null>(null);
@@ -202,6 +210,22 @@ export function useBridgeDialog({
       return null;
     return amountNumber * assetPriceUsd;
   }, [amount, assetPriceUsd]);
+
+  React.useEffect(() => {
+    const defaultAsset = getDefaultSelectedAsset();
+    setSelectedAsset((currentAsset) => {
+      if (
+        currentAsset &&
+        lstConfig.some(
+          (asset) =>
+            asset.SYMBOL.toLowerCase() === currentAsset.SYMBOL.toLowerCase(),
+        )
+      ) {
+        return currentAsset;
+      }
+      return defaultAsset;
+    });
+  }, [getDefaultSelectedAsset, lstConfig]);
 
   useEffect(() => {
     let isCancelled = false;
