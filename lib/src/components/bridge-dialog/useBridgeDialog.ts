@@ -25,7 +25,6 @@ import { DepositInfo, DepositProgress, LSTAssetConfig } from "./types";
 // TODO: Revert by deleting this constant and using `starknetAddress` directly.
 const MOCK_STARKNET_ADDRESS_FOR_STORYBOOK =
   "0x009b2b57f59f93915900eb074fc334661acdade0bc018edf7145e94a64764758" as const;
-
 interface UseBridgeDialogOptions {
   lstConfig: LSTAssetConfig[];
   onBridgeSuccess?: (txHash: string) => void;
@@ -47,8 +46,12 @@ async function fetchEthSpotPrice(): Promise<number | null> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function pickBridgeTokenForAsset(ethereumTokens: any[], assetSymbol: string): any | null {
+function pickBridgeTokenForAsset(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ethereumTokens: any[],
+  assetSymbol: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any | null {
   const assetTokens = ethereumTokens.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- StarkZap BridgeToken shape
     (t: any) => t.symbol.toLowerCase() === assetSymbol.toLowerCase(),
@@ -56,7 +59,9 @@ function pickBridgeTokenForAsset(ethereumTokens: any[], assetSymbol: string): an
   if (assetTokens.length === 0) return null;
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- StarkZap BridgeToken shape
-    assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) || assetTokens[0] || null
+    assetTokens.find((t: any) => t.protocol === Protocol.CANONICAL) ||
+    assetTokens[0] ||
+    null
   );
 }
 
@@ -69,26 +74,31 @@ export function useBridgeDialog({
   const [amount, setAmount] = useState("");
   const [isBridging, setIsBridging] = useState(false);
   const [isLoadingInfo, setIsLoadingInfo] = useState(false);
-  const [evmWalletForBridge, setEvmWalletForBridge] = useState<ConnectedEthereumWallet | null>(
-    null,
-  );
+  const [evmWalletForBridge, setEvmWalletForBridge] =
+    useState<ConnectedEthereumWallet | null>(null);
   const [depositInfo, setDepositInfo] = useState<DepositInfo>({});
-  const [depositProgress, setDepositProgress] = useState<DepositProgress | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [ethereumBridgeTokens, setEthereumBridgeTokens] = useState<any[] | null>(null);
-  const [selectedAsset, setSelectedAsset] = useState<LSTAssetConfig>(lstConfig[0]);
+  const [depositProgress, setDepositProgress] =
+    useState<DepositProgress | null>(null);
+  const [ethereumBridgeTokens, setEthereumBridgeTokens] = useState<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any[] | null
+  >(null);
+  const [selectedAsset, setSelectedAsset] = useState<LSTAssetConfig>(
+    lstConfig[0],
+  );
   const [isAssetSelectorOpen, setIsAssetSelectorOpen] = useState(false);
   const [assetPriceUsd, setAssetPriceUsd] = useState<number | null>(null);
   const depositInfoRequestIdRef = useRef(0);
 
   // Derived synchronously when the cached list or asset changes — avoids stale-token fetches.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
   const selectedToken: any | null = React.useMemo(() => {
     if (!ethereumBridgeTokens?.length) return null;
     return pickBridgeTokenForAsset(ethereumBridgeTokens, selectedAsset.SYMBOL);
   }, [ethereumBridgeTokens, selectedAsset]);
 
-  const { starkzapBridgeWallet, starkzapBridgeSDK } = useBridgeStarkzapContext();
+  const { starkzapBridgeWallet, starkzapBridgeSDK } =
+    useBridgeStarkzapContext();
   const theme = useTheme();
   const cd = theme?.connectDialog;
 
@@ -101,64 +111,75 @@ export function useBridgeDialog({
   const { address: evmAddress, connector: evmConnector } = useAccountWagmi();
   const { starknetAddress } = useAccount();
   // TODO: TESTING ONLY (Storybook) - remove fallback and use `starknetAddress` directly.
-  const effectiveStarknetAddress = starknetAddress ?? MOCK_STARKNET_ADDRESS_FOR_STORYBOOK;
+  const effectiveStarknetAddress =
+    starknetAddress ?? MOCK_STARKNET_ADDRESS_FOR_STORYBOOK;
 
   const uniqueEvm = React.useMemo(
-    () => evmConnectors.filter((c, i, self) => i === self.findIndex((x) => x.name === c.name)),
+    () =>
+      evmConnectors.filter(
+        (c, i, self) => i === self.findIndex((x) => x.name === c.name),
+      ),
     [evmConnectors],
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fetchDepositInfo = React.useCallback(async (token: any) => {
-    if (!evmWalletForBridge || !starkzapBridgeWallet) return;
+  const fetchDepositInfo = React.useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
+    async (token: any) => {
+      if (!evmWalletForBridge || !starkzapBridgeWallet) return;
 
-    const requestId = ++depositInfoRequestIdRef.current;
-    setIsLoadingInfo(true);
-    try {
-      const [balance, allowance, fees, ethPrice] = await Promise.all([
-        starkzapBridgeWallet.getDepositBalance(token, evmWalletForBridge),
-        starkzapBridgeWallet.getAllowance(token, evmWalletForBridge),
-        starkzapBridgeWallet.getDepositFeeEstimate(token, evmWalletForBridge, {
-          fastTransfer: true,
-        }),
-        fetchEthSpotPrice(),
-      ]);
+      const requestId = ++depositInfoRequestIdRef.current;
+      setIsLoadingInfo(true);
+      try {
+        const [balance, allowance, fees, ethPrice] = await Promise.all([
+          starkzapBridgeWallet.getDepositBalance(token, evmWalletForBridge),
+          starkzapBridgeWallet.getAllowance(token, evmWalletForBridge),
+          starkzapBridgeWallet.getDepositFeeEstimate(
+            token,
+            evmWalletForBridge,
+            {
+              fastTransfer: true,
+            },
+          ),
+          fetchEthSpotPrice(),
+        ]);
 
-      if (requestId !== depositInfoRequestIdRef.current) return;
+        if (requestId !== depositInfoRequestIdRef.current) return;
 
-      let totalFeeAmount: Amount;
-      if ("l1Fee" in fees && "l2Fee" in fees) {
-        totalFeeAmount = fees.l1Fee.add(fees.l2Fee);
-      } else if ("localFee" in fees && "interchainFee" in fees) {
-        totalFeeAmount = fees.localFee.add(fees.interchainFee);
-      } else {
-        totalFeeAmount = Amount.parse("0", 18, "ETH");
-      }
+        let totalFeeAmount: Amount;
+        if ("l1Fee" in fees && "l2Fee" in fees) {
+          totalFeeAmount = fees.l1Fee.add(fees.l2Fee);
+        } else if ("localFee" in fees && "interchainFee" in fees) {
+          totalFeeAmount = fees.localFee.add(fees.interchainFee);
+        } else {
+          totalFeeAmount = Amount.parse("0", 18, "ETH");
+        }
 
-      let feeUsdValue = "$0.00";
-      if (ethPrice !== null) {
-        const feeInEth = parseFloat(totalFeeAmount.toUnit());
-        if (Number.isFinite(feeInEth)) {
-          feeUsdValue = `$${(feeInEth * ethPrice).toFixed(2)}`;
+        let feeUsdValue = "$0.00";
+        if (ethPrice !== null) {
+          const feeInEth = parseFloat(totalFeeAmount.toUnit());
+          if (Number.isFinite(feeInEth)) {
+            feeUsdValue = `$${(feeInEth * ethPrice).toFixed(2)}`;
+          }
+        }
+
+        setDepositInfo({
+          balance: balance.toFormatted(),
+          allowance: allowance?.toFormatted() || null,
+          estimatedFees: {
+            amount: totalFeeAmount.toUnit(),
+            usdValue: feeUsdValue,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to fetch deposit info:", error);
+      } finally {
+        if (requestId === depositInfoRequestIdRef.current) {
+          setIsLoadingInfo(false);
         }
       }
-
-      setDepositInfo({
-        balance: balance.toFormatted(),
-        allowance: allowance?.toFormatted() || null,
-        estimatedFees: {
-          amount: totalFeeAmount.toUnit(),
-          usdValue: feeUsdValue,
-        },
-      });
-    } catch (error) {
-      console.error("Failed to fetch deposit info:", error);
-    } finally {
-      if (requestId === depositInfoRequestIdRef.current) {
-        setIsLoadingInfo(false);
-      }
-    }
-  }, [evmWalletForBridge, starkzapBridgeWallet]);
+    },
+    [evmWalletForBridge, starkzapBridgeWallet],
+  );
 
   const handleQuickAmount = (percentage: number) => {
     if (!depositInfo.balance) return;
@@ -177,7 +198,8 @@ export function useBridgeDialog({
 
   const amountUsd = React.useMemo(() => {
     const amountNumber = Number(amount);
-    if (!Number.isFinite(amountNumber) || amountNumber <= 0 || !assetPriceUsd) return null;
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0 || !assetPriceUsd)
+      return null;
     return amountNumber * assetPriceUsd;
   }, [amount, assetPriceUsd]);
 
@@ -194,13 +216,18 @@ export function useBridgeDialog({
 
         const url = `${TROVES_PRICE_API_ENDPOINT}/api/price/${encodeURIComponent(tokenSymbol)}`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Price API error: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`Price API error: ${response.status}`);
 
         const payload: unknown = await response.json();
         const parsedPrice = extractPriceFromPayload(payload);
 
         if (!isCancelled) {
-          setAssetPriceUsd(Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : null);
+          setAssetPriceUsd(
+            Number.isFinite(parsedPrice) && parsedPrice > 0
+              ? parsedPrice
+              : null,
+          );
         }
       } catch (error) {
         console.error("Failed to fetch asset price:", error);
@@ -222,8 +249,14 @@ export function useBridgeDialog({
     try {
       const pollInterval = setInterval(async () => {
         try {
-          const result = await starkzapBridgeWallet.monitorDeposit(token, externalTxHash);
-          const state = await starkzapBridgeWallet.getDepositState(token, result);
+          const result = await starkzapBridgeWallet.monitorDeposit(
+            token,
+            externalTxHash,
+          );
+          const state = await starkzapBridgeWallet.getDepositState(
+            token,
+            result,
+          );
 
           setDepositProgress({
             externalTxHash,
@@ -232,7 +265,10 @@ export function useBridgeDialog({
             depositState: state,
           });
 
-          if (state === DepositState.COMPLETED || state === DepositState.ERROR) {
+          if (
+            state === DepositState.COMPLETED ||
+            state === DepositState.ERROR
+          ) {
             clearInterval(pollInterval);
             if (state === DepositState.COMPLETED) {
               toast({ description: "Bridge completed successfully!" });
@@ -308,7 +344,9 @@ export function useBridgeDialog({
 
     const load = async () => {
       try {
-        const list = await starkzapBridgeSDK.getBridgingTokens(ExternalChain.ETHEREUM);
+        const list = await starkzapBridgeSDK.getBridgingTokens(
+          ExternalChain.ETHEREUM,
+        );
         if (!cancelled) setEthereumBridgeTokens(list);
       } catch (error) {
         console.error("Failed to load Ethereum bridge tokens:", error);
@@ -330,7 +368,12 @@ export function useBridgeDialog({
       return;
     }
     void fetchDepositInfo(selectedToken);
-  }, [selectedToken, evmWalletForBridge, starkzapBridgeWallet, fetchDepositInfo]);
+  }, [
+    selectedToken,
+    evmWalletForBridge,
+    starkzapBridgeWallet,
+    fetchDepositInfo,
+  ]);
 
   const handleDisconnectEvm = () => {
     disconnectWagmi();
@@ -347,7 +390,12 @@ export function useBridgeDialog({
   };
 
   const handleBridge = async () => {
-    if (!starkzapBridgeWallet || !effectiveStarknetAddress || !evmWalletForBridge || !amount) {
+    if (
+      !starkzapBridgeWallet ||
+      !effectiveStarknetAddress ||
+      !evmWalletForBridge ||
+      !amount
+    ) {
       toast({
         description: "Please connect wallets and enter an amount",
         variant: "destructive",
@@ -357,7 +405,10 @@ export function useBridgeDialog({
 
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      toast({ description: "Please enter a valid amount", variant: "destructive" });
+      toast({
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -381,12 +432,18 @@ export function useBridgeDialog({
 
     try {
       if (!selectedToken) {
-        throw new Error(`${selectedAsset.SYMBOL} token not ready — try reconnecting your ETH wallet`);
+        throw new Error(
+          `${selectedAsset.SYMBOL} token not ready — try reconnecting your ETH wallet`,
+        );
       }
 
       const assetToken = selectedToken;
 
-      const depositAmount = Amount.parse(amount, assetToken.decimals, assetToken.symbol);
+      const depositAmount = Amount.parse(
+        amount,
+        assetToken.decimals,
+        assetToken.symbol,
+      );
       // `useAccount` returns a hex string type; StarkZap expects branded address type.
       const recipientAddress =
         effectiveStarknetAddress as unknown as typeof starkzapBridgeWallet.address;
@@ -413,7 +470,10 @@ export function useBridgeDialog({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Bridge error:", error);
-      toast({ description: error.message || "Bridge transaction failed", variant: "destructive" });
+      toast({
+        description: error.message || "Bridge transaction failed",
+        variant: "destructive",
+      });
       onBridgeError?.(error);
       setIsBridging(false);
     }
@@ -461,7 +521,8 @@ function extractPriceFromPayload(payload: unknown): number {
     const data = payload as Record<string, unknown>;
     const candidates = [data.price, data.usd, data.value, data.result];
     for (const candidate of candidates) {
-      const numeric = typeof candidate === "string" ? Number(candidate) : Number(candidate);
+      const numeric =
+        typeof candidate === "string" ? Number(candidate) : Number(candidate);
       if (Number.isFinite(numeric) && numeric > 0) return numeric;
     }
   }

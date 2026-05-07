@@ -1,6 +1,7 @@
 import React from "react";
 
 import { ArrowLeft, ChevronDown, Info, Loader2, Wallet, X } from "lucide-react";
+import { DepositState } from "starkzap";
 
 import { Button } from "@lib/components/ui/button";
 import { Input } from "@lib/components/ui/input";
@@ -100,6 +101,10 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
   } = useBridgeDialog({ lstConfig, onBridgeSuccess, onBridgeError });
 
   const isBridgeDisabled = !starknetAddress;
+  const isDepositInProgress =
+    !!depositProgress &&
+    depositProgress.depositState !== DepositState.COMPLETED &&
+    depositProgress.depositState !== DepositState.ERROR;
 
   return (
     <>
@@ -158,6 +163,103 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
         </DialogHeader>
 
         <div className="easyleap-flex easyleap-flex-col easyleap-gap-2.5 md:easyleap-gap-3.5">
+          {/* Starknet receiving address */}
+          <div
+            className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
+            style={{ backgroundColor: bd.infoBackgroundColor }}
+          >
+            <span
+              className="easyleap-text-xs md:easyleap-text-sm"
+              style={{
+                color: bd.infoTextColor,
+                fontFamily: "Inter, sans-serif",
+                letterSpacing: "-0.15px",
+              }}
+            >
+              Receiving on Starknet wallet
+            </span>
+            <span
+              className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
+              style={{ color: bd.primaryTextColor, letterSpacing: "-0.44px" }}
+            >
+              {starknetAddress
+                ? shortAddress(starknetAddress.toString(), 8, 8)
+                : "Not connected"}
+            </span>
+          </div>
+
+          {/* ETH Wallet Connection */}
+          <div className="easyleap-flex easyleap-flex-col easyleap-gap-1">
+            <span
+              className="easyleap-text-[11px] md:easyleap-text-[13px]"
+              style={{ color: bd.mutedTextColor, letterSpacing: "-0.08px" }}
+            >
+              Fund your starknet wallet by connecting your ETH wallet
+            </span>
+
+            {!evmAddress ? (
+              <div className="easyleap-flex easyleap-flex-col easyleap-gap-2.5">
+                {uniqueEvm.map((connector) => (
+                  <ConnectRow
+                    key={connector.name}
+                    label={walletLabel(connector.name)}
+                    icon={getWalletIcon(connector.name.toLowerCase())}
+                    onClick={() => connectEVM({ connector })}
+                    disabled={isConnectingEVM}
+                    bd={bd}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
+                style={{ backgroundColor: bd.infoBackgroundColor }}
+              >
+                <div className="easyleap-flex easyleap-items-center easyleap-gap-2 md:easyleap-gap-3">
+                  <div className="easyleap-flex easyleap-size-7 md:easyleap-size-8 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-rounded-[10px]">
+                    {getWalletIcon(
+                      (evmConnector?.name ?? "metamask").toLowerCase(),
+                    )}
+                  </div>
+                  <div className="easyleap-flex easyleap-flex-col">
+                    <span
+                      className="easyleap-text-xs md:easyleap-text-sm"
+                      style={{
+                        color: bd.infoTextColor,
+                        letterSpacing: "-0.15px",
+                      }}
+                    >
+                      {walletLabel(String(evmConnector?.name ?? "EVM"))}
+                    </span>
+                    <span
+                      className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
+                      style={{
+                        color: bd.primaryTextColor,
+                        letterSpacing: "-0.44px",
+                      }}
+                    >
+                      {shortAddress(evmAddress, 6, 6)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Disconnect wallet"
+                  className={cn(
+                    "easyleap-flex easyleap-size-5 easyleap-items-center easyleap-justify-center easyleap-opacity-50 easyleap-transition-opacity",
+                    isDepositInProgress
+                      ? "easyleap-cursor-not-allowed"
+                      : "hover:easyleap-opacity-85",
+                  )}
+                  disabled={isDepositInProgress}
+                  onClick={handleDisconnectEvm}
+                >
+                  <X className="easyleap-size-4" strokeWidth={1.5} />
+                </button>
+              </div>
+            )}
+          </div>
+
           {depositProgress ? (
             <DepositProgressView
               depositProgress={depositProgress}
@@ -165,100 +267,11 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
               depositInfo={depositInfo}
               cd={cd as Record<string, string> | undefined}
               onClose={() => handleDialogClose(false)}
+              selectedAssetSymbol={selectedAsset.SYMBOL}
+              starknetAddress={starknetAddress?.toString()}
             />
           ) : (
             <>
-              {/* Starknet receiving address */}
-              <div
-                className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
-                style={{ backgroundColor: bd.infoBackgroundColor }}
-              >
-                <span
-                  className="easyleap-text-xs md:easyleap-text-sm"
-                  style={{
-                    color: bd.infoTextColor,
-                    fontFamily: "Inter, sans-serif",
-                    letterSpacing: "-0.15px",
-                  }}
-                >
-                  Receiving on Starknet wallet
-                </span>
-                <span
-                  className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
-                  style={{ color: bd.primaryTextColor, letterSpacing: "-0.44px" }}
-                >
-                  {starknetAddress
-                    ? shortAddress(starknetAddress.toString(), 8, 8)
-                    : "Not connected"}
-                </span>
-              </div>
-
-              {/* ETH Wallet Connection */}
-              <div className="easyleap-flex easyleap-flex-col easyleap-gap-1">
-                <span
-                  className="easyleap-text-[11px] md:easyleap-text-[13px]"
-                  style={{ color: bd.mutedTextColor, letterSpacing: "-0.08px" }}
-                >
-                  Fund your starknet wallet by connecting your ETH wallet
-                </span>
-
-                {!evmAddress ? (
-                  <div className="easyleap-flex easyleap-flex-col easyleap-gap-2.5">
-                    {uniqueEvm.map((connector) => (
-                      <ConnectRow
-                        key={connector.name}
-                        label={walletLabel(connector.name)}
-                        icon={getWalletIcon(connector.name.toLowerCase())}
-                        onClick={() => connectEVM({ connector })}
-                        disabled={isConnectingEVM}
-                        bd={bd}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
-                    style={{ backgroundColor: bd.infoBackgroundColor }}
-                  >
-                    <div className="easyleap-flex easyleap-items-center easyleap-gap-2 md:easyleap-gap-3">
-                      <div className="easyleap-flex easyleap-size-7 md:easyleap-size-8 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-rounded-[10px]">
-                        {getWalletIcon(
-                          (evmConnector?.name ?? "metamask").toLowerCase(),
-                        )}
-                      </div>
-                      <div className="easyleap-flex easyleap-flex-col">
-                        <span
-                          className="easyleap-text-xs md:easyleap-text-sm"
-                          style={{
-                            color: bd.infoTextColor,
-                            letterSpacing: "-0.15px",
-                          }}
-                        >
-                          {walletLabel(String(evmConnector?.name ?? "EVM"))}
-                        </span>
-                        <span
-                          className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
-                          style={{
-                            color: bd.primaryTextColor,
-                            letterSpacing: "-0.44px",
-                          }}
-                        >
-                          {shortAddress(evmAddress, 6, 6)}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="Disconnect wallet"
-                      className="easyleap-flex easyleap-size-5 easyleap-items-center easyleap-justify-center easyleap-opacity-50 easyleap-transition-opacity hover:easyleap-opacity-85"
-                      onClick={handleDisconnectEvm}
-                    >
-                      <X className="easyleap-size-3" strokeWidth={1.5} />
-                    </button>
-                  </div>
-                )}
-              </div>
-
               {/* Asset Selector & Amount Input — only shown when both wallets connected */}
               {evmAddress && starknetAddress && (
                 <div className="easyleap-flex easyleap-flex-col easyleap-gap-2.5 md:easyleap-gap-3">
@@ -292,7 +305,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
-                        className="easyleap-min-w-[220px]"
+                        className="easyleap-w-[var(--radix-dropdown-menu-trigger-width)]"
                         align="start"
                         style={{
                           backgroundColor: bd.dropdownBackground,
@@ -307,10 +320,19 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                               setIsAssetSelectorOpen(false);
                               setAmount("");
                             }}
-                            className="easyleap-flex easyleap-cursor-pointer easyleap-items-center easyleap-gap-2 easyleap-transition-colors"
-                            style={{
-                              backgroundColor: bd.dropdownBackground,
-                            }}
+                            className="easyleap-flex easyleap-w-full easyleap-cursor-pointer easyleap-items-center easyleap-gap-2 easyleap-bg-[var(--easyleap-dropdown-item-bg)] easyleap-transition-colors data-[highlighted]:easyleap-bg-[var(--easyleap-dropdown-item-hover-bg)] data-[highlighted]:easyleap-text-[var(--easyleap-dropdown-item-hover-text)] focus:easyleap-bg-[var(--easyleap-dropdown-item-hover-bg)] focus:easyleap-text-[var(--easyleap-dropdown-item-hover-text)]"
+                            style={
+                              {
+                                "--easyleap-dropdown-item-bg":
+                                  bd.dropdownItemBackground ?? bd.dropdownBackground,
+                                "--easyleap-dropdown-item-hover-bg":
+                                  bd.dropdownItemHoverBackground ??
+                                  bd.dropdownHoverBackground,
+                                "--easyleap-dropdown-item-hover-text":
+                                  bd.dropdownItemHoverTextColor ??
+                                  bd.dropdownHoverTextColor,
+                              } as React.CSSProperties
+                            }
                           >
                             {getAssetIcon(asset.SYMBOL)}
                             <span>{asset.SYMBOL}</span>

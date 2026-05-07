@@ -126,6 +126,9 @@ export interface GlobalTheme {
     percentageButtonHoverTextColor?: string;
     dropdownBackground?: string;
     dropdownBorder?: string;
+    dropdownItemBackground?: string;
+    dropdownItemHoverBackground?: string;
+    dropdownItemHoverTextColor?: string;
     dropdownHoverBackground?: string;
     dropdownHoverTextColor?: string;
     summaryLabelColor?: string;
@@ -227,6 +230,9 @@ const defaultTheme: GlobalTheme = {
     percentageButtonHoverTextColor: "#4a5565",
     dropdownBackground: "#fff",
     dropdownBorder: "#e5e8eb",
+    dropdownItemBackground: "#fff",
+    dropdownItemHoverBackground: "#ebeef0",
+    dropdownItemHoverTextColor: "#1a1f24",
     dropdownHoverBackground: "#ebeef0",
     dropdownHoverTextColor: "#1a1f24",
     summaryLabelColor: "#0d5f4e",
