@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@lib/components/ui/tooltip";
 import { cn, shortAddress } from "@lib/utils";
+import { useTheme } from "@lib/contexts/ThemeContext";
 
 import { DEFAULT_LST_CONFIGS, PERCENTAGE_BUTTONS } from "./constants";
 import { DepositProgressView } from "./DepositProgressView";
@@ -38,19 +39,23 @@ const ConnectRow: React.FC<{
   icon: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
-}> = ({ label, icon, onClick, disabled }) => (
+  bd: NonNullable<ReturnType<typeof useTheme>["bridgeDialog"]>;
+}> = ({ label, icon, onClick, disabled, bd }) => (
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
     className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button disabled:easyleap-opacity-50"
     style={{
-      border: "1px solid #e5e8eb",
-      backgroundColor: "#fff",
-      color: "#000",
+      border: bd.walletConnectRowBorder,
+      backgroundColor: bd.walletConnectRowBackground,
+      color: bd.walletConnectRowTextColor,
     }}
   >
-    <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
+    <span
+      className="easyleap-rounded-full easyleap-border easyleap-p-1"
+      style={{ borderColor: bd.iconBorderColor }}
+    >
       {icon}
     </span>
     {label}
@@ -64,6 +69,9 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
   className = "",
   lstConfig = DEFAULT_LST_CONFIGS,
 }) => {
+  const theme = useTheme();
+  const bd = theme.bridgeDialog!;
+
   const {
     open,
     handleDialogClose,
@@ -94,7 +102,15 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
   const isBridgeDisabled = !starknetAddress;
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
+    <>
+      <style>
+        {`
+          .easyleap-bridge-input::placeholder {
+            color: ${bd.inputPlaceholderColor} !important;
+          }
+        `}
+      </style>
+      <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>
         <Button
           className={cn("easyleap-font-firaCode", className)}
@@ -109,8 +125,8 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
       <DialogContent
         className="!easyleap-w-[350px] md:!easyleap-w-full !easyleap-max-w-[576px] !easyleap-max-h-[90vh] md:!easyleap-max-h-[734px] !easyleap-overflow-y-auto easyleap-rounded-[10px] easyleap-border easyleap-p-3 md:easyleap-p-[16px_13px]"
         style={{
-          backgroundColor: "#fff",
-          border: "1px solid rgba(0,0,0,0.1)",
+          backgroundColor: bd.modalBackground,
+          border: bd.modalBorder,
           boxShadow: "0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
           ...style?.modalStyles,
         }}
@@ -124,14 +140,15 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
             aria-label="Go back"
           >
             <ArrowLeft
-              className="easyleap-size-[18px] easyleap-text-[#101828]"
+              className="easyleap-size-[18px]"
+              style={{ color: bd.primaryTextColor }}
               strokeWidth={1.8}
             />
           </button>
           <DialogTitle
             className="easyleap-flex-1 easyleap-text-left easyleap-text-lg md:easyleap-text-2xl easyleap-font-semibold easyleap-leading-6 md:easyleap-leading-8"
             style={{
-              color: "#03624c",
+              color: bd.titleColor,
               fontFamily: "Inter, sans-serif",
               letterSpacing: "0.07px",
             }}
@@ -154,13 +171,12 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
               {/* Starknet receiving address */}
               <div
                 className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
-                style={{ backgroundColor: "#e8f5f1" }}
+                style={{ backgroundColor: bd.infoBackgroundColor }}
               >
                 <span
                   className="easyleap-text-xs md:easyleap-text-sm"
                   style={{
-                    // TODO: make color dynamic
-                    color: "#03624c",
+                    color: bd.infoTextColor,
                     fontFamily: "Inter, sans-serif",
                     letterSpacing: "-0.15px",
                   }}
@@ -169,7 +185,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                 </span>
                 <span
                   className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
-                  style={{ color: "#101828", letterSpacing: "-0.44px" }}
+                  style={{ color: bd.primaryTextColor, letterSpacing: "-0.44px" }}
                 >
                   {starknetAddress
                     ? shortAddress(starknetAddress.toString(), 8, 8)
@@ -181,7 +197,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
               <div className="easyleap-flex easyleap-flex-col easyleap-gap-1">
                 <span
                   className="easyleap-text-[11px] md:easyleap-text-[13px]"
-                  style={{ color: "#6b7780", letterSpacing: "-0.08px" }}
+                  style={{ color: bd.mutedTextColor, letterSpacing: "-0.08px" }}
                 >
                   Fund your starknet wallet by connecting your ETH wallet
                 </span>
@@ -195,17 +211,17 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         icon={getWalletIcon(connector.name.toLowerCase())}
                         onClick={() => connectEVM({ connector })}
                         disabled={isConnectingEVM}
+                        bd={bd}
                       />
                     ))}
                   </div>
                 ) : (
                   <div
                     className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-2xl easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4"
-                    style={{ backgroundColor: "#e8f5f1" }}
+                    style={{ backgroundColor: bd.infoBackgroundColor }}
                   >
                     <div className="easyleap-flex easyleap-items-center easyleap-gap-2 md:easyleap-gap-3">
                       <div className="easyleap-flex easyleap-size-7 md:easyleap-size-8 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-rounded-[10px]">
-                        {/* TODO: fix wallet icon over here and icon sizing*/}
                         {getWalletIcon(
                           (evmConnector?.name ?? "metamask").toLowerCase(),
                         )}
@@ -214,8 +230,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         <span
                           className="easyleap-text-xs md:easyleap-text-sm"
                           style={{
-                            // TODO: make this color dynamic
-                            color: "#03624c",
+                            color: bd.infoTextColor,
                             letterSpacing: "-0.15px",
                           }}
                         >
@@ -224,8 +239,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         <span
                           className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
                           style={{
-                            // TODO: make color dynamic
-                            color: "#101828",
+                            color: bd.primaryTextColor,
                             letterSpacing: "-0.44px",
                           }}
                         >
@@ -252,7 +266,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                   <div className="easyleap-flex easyleap-flex-col easyleap-gap-1">
                     <label
                       className="easyleap-text-[11px] md:easyleap-text-[13px]"
-                      style={{ color: "#6b7780", letterSpacing: "-0.08px" }}
+                      style={{ color: bd.mutedTextColor, letterSpacing: "-0.08px" }}
                     >
                       Select BTC wrapper
                     </label>
@@ -262,8 +276,8 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                     >
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-[14px] easyleap-border easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-[21px] easyleap-transition-colors hover:easyleap-border-[#cbd0d5]"
-                          style={{ borderColor: "#e5e8eb" }}
+                          className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-rounded-[14px] easyleap-border easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-[21px] easyleap-transition-colors"
+                          style={{ borderColor: bd.borderColor }}
                         >
                           <div className="easyleap-flex easyleap-items-center easyleap-gap-2">
                             {getAssetIcon(selectedAsset.SYMBOL)}
@@ -281,8 +295,8 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         className="easyleap-min-w-[220px]"
                         align="start"
                         style={{
-                          backgroundColor: "#fff",
-                          border: "1px solid #e5e8eb",
+                          backgroundColor: bd.dropdownBackground,
+                          border: `1px solid ${bd.dropdownBorder}`,
                         }}
                       >
                         {lstConfig.map((asset) => (
@@ -293,7 +307,10 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                               setIsAssetSelectorOpen(false);
                               setAmount("");
                             }}
-                            className="easyleap-flex easyleap-cursor-pointer easyleap-items-center easyleap-gap-2 easyleap-bg-white easyleap-transition-colors data-[highlighted]:easyleap-bg-[#ebeef0] data-[highlighted]:easyleap-text-[#1a1f24] focus:easyleap-bg-[#ebeef0] focus:easyleap-text-[#1a1f24]"
+                            className="easyleap-flex easyleap-cursor-pointer easyleap-items-center easyleap-gap-2 easyleap-transition-colors"
+                            style={{
+                              backgroundColor: bd.dropdownBackground,
+                            }}
                           >
                             {getAssetIcon(asset.SYMBOL)}
                             <span>{asset.SYMBOL}</span>
@@ -308,7 +325,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                     <div className="easyleap-flex easyleap-items-center easyleap-justify-between easyleap-gap-3">
                       <label
                         className="easyleap-text-[11px] md:easyleap-text-[13px]"
-                        style={{ color: "#6b7780", letterSpacing: "-0.08px" }}
+                        style={{ color: bd.mutedTextColor, letterSpacing: "-0.08px" }}
                       >
                         Enter Amount
                       </label>
@@ -316,17 +333,17 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         <div className="easyleap-flex easyleap-items-center easyleap-gap-1">
                           <Wallet
                             className="easyleap-size-3"
-                            style={{ color: "#6b7780" }}
+                            style={{ color: bd.mutedTextColor }}
                           />
                           <span
                             className="easyleap-hidden md:easyleap-block easyleap-text-xs"
-                            style={{ color: "#6b7780" }}
+                            style={{ color: bd.mutedTextColor }}
                           >
                             Balance:
                           </span>
                           <span
                             className="easyleap-text-xs"
-                            style={{ color: "#1a1f24" }}
+                            style={{ color: bd.darkTextColor }}
                           >
                             {(() => {
                               const balanceMatch =
@@ -344,7 +361,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           {assetPriceUsd !== null && (
                             <span
                               className="easyleap-text-xs"
-                              style={{ color: "#6b7780" }}
+                              style={{ color: bd.mutedTextColor }}
                             >
                               {(() => {
                                 const balanceMatch =
@@ -364,8 +381,10 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                       )}
                     </div>
                     <div
-                      className="easyleap-flex easyleap-flex-col easyleap-gap-1 easyleap-rounded-[14px] easyleap-border easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4 easyleap-transition-colors focus-within:easyleap-border-[#17876d]"
-                      style={{ borderColor: "#e5e8eb" }}
+                      className="easyleap-flex easyleap-flex-col easyleap-gap-1 easyleap-rounded-[14px] easyleap-border easyleap-px-3 md:easyleap-px-4 easyleap-py-3 md:easyleap-py-4 easyleap-transition-colors"
+                      style={{ 
+                        borderColor: bd.borderColor,
+                      }}
                     >
                       <div className="easyleap-flex easyleap-items-center easyleap-justify-between">
                         <Input
@@ -374,10 +393,12 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
                           disabled={isBridging || isLoadingInfo}
-                          className="!easyleap-h-[24px] md:!easyleap-h-[29px] !easyleap-py-0 easyleap-text-xl md:!easyleap-text-2xl easyleap-flex-1 !easyleap-border-0 !easyleap-bg-transparent easyleap-p-0 easyleap-pr-1 !easyleap-shadow-none !easyleap-outline-none placeholder:easyleap-text-[#8D9C9C] focus-visible:!easyleap-ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:easyleap-appearance-none [&::-webkit-outer-spin-button]:easyleap-appearance-none"
+                          className="easyleap-bridge-input !easyleap-h-[24px] md:!easyleap-h-[29px] !easyleap-py-0 easyleap-text-xl md:!easyleap-text-2xl easyleap-flex-1 !easyleap-border-0 !easyleap-bg-transparent easyleap-p-0 easyleap-pr-1 !easyleap-shadow-none !easyleap-outline-none focus-visible:!easyleap-ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:easyleap-appearance-none [&::-webkit-outer-spin-button]:easyleap-appearance-none"
                           style={{
                             fontFamily: "Inter, sans-serif",
                             letterSpacing: "0.07px",
+                            // @ts-expect-error - CSS custom property for placeholder color
+                            "--placeholder-color": bd.inputPlaceholderColor,
                           }}
                           step="0.00000001"
                           min="0"
@@ -386,7 +407,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           <span
                             className="easyleap-text-sm md:easyleap-text-base md:!easyleap-text-lg"
                             style={{
-                              color: "#6b7780",
+                              color: bd.mutedTextColor,
                               letterSpacing: "-0.31px",
                             }}
                           >
@@ -396,7 +417,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                       </div>
                       <span
                         className="easyleap-text-xs"
-                        style={{ color: "#6b7780", letterSpacing: "0.07px" }}
+                        style={{ color: bd.mutedTextColor, letterSpacing: "0.07px" }}
                       >
                         {amountUsd !== null
                           ? `≈ $${amountUsd.toFixed(2)}`
@@ -413,11 +434,20 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         type="button"
                         onClick={() => handleQuickAmount(value)}
                         disabled={!depositInfo.balance || isLoadingInfo}
-                        className="easyleap-flex-1 easyleap-rounded-[10px] easyleap-py-[3px] md:easyleap-py-[4px] easyleap-text-center easyleap-text-[11px] md:easyleap-text-[13px] easyleap-font-medium easyleap-transition-all hover:easyleap-bg-[#ebeef0] hover:easyleap-text-[#4a5565] disabled:easyleap-opacity-50"
+                        className="easyleap-flex-1 easyleap-rounded-[10px] easyleap-py-[3px] md:easyleap-py-[4px] easyleap-text-center easyleap-text-[11px] md:easyleap-text-[13px] easyleap-font-medium easyleap-transition-all disabled:easyleap-opacity-50"
                         style={{
-                          backgroundColor: "#f5f7f8",
-                          color: "#6b7780",
+                          backgroundColor: bd.percentageButtonBackground,
+                          color: bd.percentageButtonTextColor,
                           letterSpacing: "-0.08px",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!depositInfo.balance || isLoadingInfo) return;
+                          e.currentTarget.style.backgroundColor = bd.percentageButtonHoverBackground || bd.percentageButtonBackground || "";
+                          e.currentTarget.style.color = bd.percentageButtonHoverTextColor || bd.percentageButtonTextColor || "";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = bd.percentageButtonBackground || "";
+                          e.currentTarget.style.color = bd.percentageButtonTextColor || "";
                         }}
                       >
                         {label}
@@ -429,7 +459,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                   <div className="easyleap-flex easyleap-flex-col easyleap-gap-2 md:easyleap-gap-3">
                     <p
                       className="easyleap-text-[11px] md:easyleap-text-[13px] easyleap-font-medium easyleap-uppercase"
-                      style={{ color: "#6b7780", letterSpacing: "0.25px" }}
+                      style={{ color: bd.mutedTextColor, letterSpacing: "0.25px" }}
                     >
                       Transaction Summary
                     </p>
@@ -440,7 +470,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           <span
                             className="easyleap-text-[10px] md:easyleap-text-[11px] easyleap-font-semibold"
                             style={{
-                              color: "#0d5f4e",
+                              color: bd.summaryLabelColor,
                               letterSpacing: "0.06px",
                             }}
                           >
@@ -451,7 +481,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           <span
                             className="easyleap-text-sm md:easyleap-text-base easyleap-font-medium"
                             style={{
-                              color: "#0d5f4e",
+                              color: bd.summaryLabelColor,
                               letterSpacing: "-0.45px",
                             }}
                           >
@@ -459,7 +489,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           </span>
                           <span
                             className="easyleap-text-[10px] md:easyleap-text-xs"
-                            style={{ color: "#6b7780" }}
+                            style={{ color: bd.mutedTextColor }}
                           >
                             {amountUsd !== null
                               ? `≈ $${amountUsd.toFixed(2)}`
@@ -490,7 +520,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                             <span
                               className="easyleap-text-[10px] md:easyleap-text-[11px] easyleap-font-medium"
                               style={{
-                                color: "#6b7780",
+                                color: bd.mutedTextColor,
                                 letterSpacing: "0.06px",
                               }}
                             >
@@ -504,10 +534,19 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                                     aria-label={`${label} info`}
                                     className="easyleap-inline-flex easyleap-items-center easyleap-justify-center"
                                   >
-                                    <Info className="easyleap-size-3 md:easyleap-size-4 easyleap-text-[#6b7780]" />
+                                    <Info 
+                                      className="easyleap-size-3 md:easyleap-size-4"
+                                      style={{ color: bd.mutedTextColor }}
+                                    />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent className="easyleap-max-w-[220px] easyleap-border easyleap-bg-white easyleap-px-3 easyleap-py-2 easyleap-text-[11px] md:easyleap-text-xs easyleap-text-[#1a1f24]">
+                                <TooltipContent 
+                                  className="easyleap-max-w-[220px] easyleap-border easyleap-px-3 easyleap-py-2 easyleap-text-[11px] md:easyleap-text-xs"
+                                  style={{
+                                    backgroundColor: bd.modalBackground,
+                                    color: bd.darkTextColor,
+                                  }}
+                                >
                                   {tooltipText}
                                 </TooltipContent>
                               </Tooltip>
@@ -516,7 +555,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           <span
                             className="easyleap-text-right easyleap-text-[11px] md:easyleap-text-[13px] easyleap-font-medium"
                             style={{
-                              color: "#1a1f24",
+                              color: bd.darkTextColor,
                               letterSpacing: "-0.08px",
                             }}
                           >
@@ -539,17 +578,36 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                     !amount ||
                     parseFloat(amount) <= 0
                   }
-                  className="!easyleap-border-none easyleap-flex !easyleap-h-[48px] md:!easyleap-h-[56px] !easyleap-max-h-[48px] md:!easyleap-max-h-[56px] easyleap-w-full !easyleap-text-white easyleap-items-center easyleap-justify-center !easyleap-rounded-[14px] easyleap-px-4 easyleap-py-0 easyleap-text-sm md:easyleap-text-base easyleap-font-semibold easyleap-text-white easyleap-shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.1)] easyleap-transition-colors hover:easyleap-bg-[#14755f] active:easyleap-bg-[#116652] disabled:easyleap-opacity-50"
+                  className="!easyleap-border-none easyleap-flex !easyleap-h-[48px] md:!easyleap-h-[56px] !easyleap-max-h-[48px] md:!easyleap-max-h-[56px] easyleap-w-full !easyleap-text-white easyleap-items-center easyleap-justify-center !easyleap-rounded-[14px] easyleap-px-4 easyleap-py-0 easyleap-text-sm md:easyleap-text-base easyleap-font-semibold easyleap-text-white easyleap-shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.1)] easyleap-transition-colors disabled:easyleap-opacity-50"
                   style={{
                     backgroundColor:
                       !amount || parseFloat(amount) <= 0
-                        ? "#C9D1D6"
-                        : "#17876d",
+                        ? bd.disabledButtonBackground
+                        : bd.primaryButtonBackground,
                     letterSpacing: "-0.31px",
                     cursor:
                       !amount || parseFloat(amount) <= 0
                         ? "default"
                         : "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!amount || parseFloat(amount) <= 0 || isBridging || isLoadingInfo) return;
+                    e.currentTarget.style.backgroundColor = bd.primaryButtonHoverBackground || bd.primaryButtonBackground || "";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!amount || parseFloat(amount) <= 0) {
+                      e.currentTarget.style.backgroundColor = bd.disabledButtonBackground || "";
+                    } else {
+                      e.currentTarget.style.backgroundColor = bd.primaryButtonBackground || "";
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    if (!amount || parseFloat(amount) <= 0 || isBridging || isLoadingInfo) return;
+                    e.currentTarget.style.backgroundColor = bd.primaryButtonActiveBackground || bd.primaryButtonBackground || "";
+                  }}
+                  onMouseUp={(e) => {
+                    if (!amount || parseFloat(amount) <= 0 || isBridging || isLoadingInfo) return;
+                    e.currentTarget.style.backgroundColor = bd.primaryButtonHoverBackground || bd.primaryButtonBackground || "";
                   }}
                 >
                   {isBridging ? (
@@ -574,5 +632,6 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 };

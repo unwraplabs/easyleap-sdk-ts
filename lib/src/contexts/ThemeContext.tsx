@@ -101,6 +101,40 @@ export interface GlobalTheme {
     moreOptionsBackground?: string;
     moreOptionsTextColor?: string;
   };
+
+  /** Bridge dialog colors */
+  bridgeDialog?: {
+    modalBackground?: string;
+    modalBorder?: string;
+    modalBorderRadius?: string;
+    titleColor?: string;
+    infoBackgroundColor?: string;
+    infoTextColor?: string;
+    mutedTextColor?: string;
+    primaryTextColor?: string;
+    darkTextColor?: string;
+    borderColor?: string;
+    borderHoverColor?: string;
+    focusBorderColor?: string;
+    primaryButtonBackground?: string;
+    primaryButtonHoverBackground?: string;
+    primaryButtonActiveBackground?: string;
+    disabledButtonBackground?: string;
+    percentageButtonBackground?: string;
+    percentageButtonHoverBackground?: string;
+    percentageButtonTextColor?: string;
+    percentageButtonHoverTextColor?: string;
+    dropdownBackground?: string;
+    dropdownBorder?: string;
+    dropdownHoverBackground?: string;
+    dropdownHoverTextColor?: string;
+    summaryLabelColor?: string;
+    walletConnectRowBorder?: string;
+    walletConnectRowBackground?: string;
+    walletConnectRowTextColor?: string;
+    iconBorderColor?: string;
+    inputPlaceholderColor?: string;
+  };
 }
 
 const defaultTheme: GlobalTheme = {
@@ -170,6 +204,39 @@ const defaultTheme: GlobalTheme = {
     closeButtonColor: "#B4A7D6"
   },
 
+  bridgeDialog: {
+    modalBackground: "#fff",
+    modalBorder: "1px solid #e5e8eb",
+    modalBorderRadius: "10px",
+    titleColor: "#03624c",
+    infoBackgroundColor: "#e8f5f1",
+    infoTextColor: "#03624c",
+    mutedTextColor: "#6b7780",
+    primaryTextColor: "#101828",
+    darkTextColor: "#1a1f24",
+    borderColor: "#e5e8eb",
+    borderHoverColor: "#cbd0d5",
+    focusBorderColor: "#17876d",
+    primaryButtonBackground: "#17876d",
+    primaryButtonHoverBackground: "#14755f",
+    primaryButtonActiveBackground: "#116652",
+    disabledButtonBackground: "#C9D1D6",
+    percentageButtonBackground: "#f5f7f8",
+    percentageButtonHoverBackground: "#ebeef0",
+    percentageButtonTextColor: "#6b7780",
+    percentageButtonHoverTextColor: "#4a5565",
+    dropdownBackground: "#fff",
+    dropdownBorder: "#e5e8eb",
+    dropdownHoverBackground: "#ebeef0",
+    dropdownHoverTextColor: "#1a1f24",
+    summaryLabelColor: "#0d5f4e",
+    walletConnectRowBorder: "1px solid #e5e8eb",
+    walletConnectRowBackground: "#fff",
+    walletConnectRowTextColor: "#000",
+    iconBorderColor: "#DBDBDB",
+    inputPlaceholderColor: "#8D9C9C"
+  },
+
   // BRIDGE MODE - bridgeMode default theme commented out
   // bridgeMode: {
   //   mainBgColor: "#1B182B",
@@ -195,6 +262,10 @@ export const ThemeProvider = ({
     connectDialog: {
       ...defaultTheme.connectDialog,
       ...theme?.connectDialog
+    },
+    bridgeDialog: {
+      ...defaultTheme.bridgeDialog,
+      ...theme?.bridgeDialog
     }
   };
 
