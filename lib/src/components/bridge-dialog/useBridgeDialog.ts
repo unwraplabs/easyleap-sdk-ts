@@ -94,6 +94,7 @@ export function useBridgeDialog({
   const [isAssetSelectorOpen, setIsAssetSelectorOpen] = useState(false);
   const [assetPriceUsd, setAssetPriceUsd] = useState<number | null>(null);
   const depositInfoRequestIdRef = useRef(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived synchronously when the cached list or asset changes — avoids stale-token fetches.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
@@ -113,6 +114,7 @@ export function useBridgeDialog({
     isPending: isConnectingEVM,
   } = useConnectWagmi();
   const { disconnect: disconnectWagmi } = useDisconnectWagmi();
+  // using a seperate useAccount wagmi for sep of concern ( since before our plan was a L1 mode)
   const { address: evmAddress, connector: evmConnector } = useAccountWagmi();
   const { starknetAddress } = useAccount();
 
@@ -129,6 +131,7 @@ export function useBridgeDialog({
     async (token: any) => {
       if (!evmWalletForBridge || !starkzapBridgeWallet) return;
 
+      // maintaining a requestId to avoid race conditions and stale data updation
       const requestId = ++depositInfoRequestIdRef.current;
       setIsLoadingInfo(true);
       try {
@@ -138,6 +141,7 @@ export function useBridgeDialog({
           starkzapBridgeWallet.getDepositFeeEstimate(
             token,
             evmWalletForBridge,
+            // this altough is only needed for cctp bridge but keeping it for now
             {
               fastTransfer: true,
             },
@@ -165,8 +169,8 @@ export function useBridgeDialog({
         }
 
         setDepositInfo({
-          balance: balance.toFormatted(),
-          allowance: allowance?.toFormatted() || null,
+          balance: balance.toUnit(),
+          allowance: allowance?.toUnit() || null,
           estimatedFees: {
             amount: totalFeeAmount.toUnit(),
             usdValue: feeUsdValue,
@@ -186,11 +190,7 @@ export function useBridgeDialog({
   const handleQuickAmount = (percentage: number) => {
     if (!depositInfo.balance) return;
 
-    const balanceMatch = depositInfo.balance.match(/[\d,]+\.?\d*/);
-    if (!balanceMatch) return;
-
-    const balanceStr = balanceMatch[0].replace(/,/g, "");
-    const balanceNum = parseFloat(balanceStr);
+    const balanceNum = parseFloat(depositInfo.balance);
     if (isNaN(balanceNum)) return;
 
     const raw = (balanceNum * percentage) / 100;
@@ -260,48 +260,60 @@ export function useBridgeDialog({
     };
   }, [selectedAsset]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const monitorDepositProgress = async (externalTxHash: string, token: any) => {
-    if (!starkzapBridgeWallet) return;
+  const monitorDepositProgress = React.useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
+    async (externalTxHash: string, token: any) => {
+      if (!starkzapBridgeWallet) return;
 
-    try {
-      const pollInterval = setInterval(async () => {
-        try {
-          const result = await starkzapBridgeWallet.monitorDeposit(
-            token,
-            externalTxHash,
-          );
-          const state = await starkzapBridgeWallet.getDepositState(
-            token,
-            result,
-          );
+      // Clear any existing interval before starting a new one
+      if (pollIntervalRef.current) {
+        console.log("Clearing existing poll interval");
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
 
-          setDepositProgress({
-            externalTxHash,
-            starknetTxHash: result.starknetTxHash,
-            status: result.status,
-            depositState: state,
-          });
+      try {
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            console.log("monitoring deposit progress.....");
+            const result = await starkzapBridgeWallet.monitorDeposit(
+              token,
+              externalTxHash,
+            );
+            const state = await starkzapBridgeWallet.getDepositState(
+              token,
+              result,
+            );
 
-          if (
-            state === DepositState.COMPLETED ||
-            state === DepositState.ERROR
-          ) {
-            clearInterval(pollInterval);
-            if (state === DepositState.COMPLETED) {
-              toast({ description: "Bridge completed successfully!" });
+            setDepositProgress({
+              externalTxHash,
+              starknetTxHash: result.starknetTxHash,
+              status: result.status,
+              depositState: state,
+            });
+
+            if (
+              state === DepositState.COMPLETED ||
+              state === DepositState.ERROR
+            ) {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              if (state === DepositState.COMPLETED) {
+                toast({ description: "Bridge completed successfully!" });
+              }
             }
+          } catch (error) {
+            console.error("Monitor error:", error);
           }
-        } catch (error) {
-          console.error("Monitor error:", error);
-        }
-      }, 5000);
-
-      return () => clearInterval(pollInterval);
-    } catch (error) {
-      console.error("Failed to start monitoring:", error);
-    }
-  };
+        }, 5000);
+      } catch (error) {
+        console.error("Failed to start monitoring:", error);
+      }
+    },
+    [starkzapBridgeWallet],
+  );
 
   // Create ConnectedEthereumWallet when EVM wallet connects
   React.useEffect(() => {
@@ -393,6 +405,17 @@ export function useBridgeDialog({
     fetchDepositInfo,
   ]);
 
+  // Cleanup poll interval on unmount or when dialog closes
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        console.log("Cleaning up poll interval on unmount");
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   const handleDisconnectEvm = () => {
     disconnectWagmi();
     setEvmWalletForBridge(null);
@@ -400,6 +423,8 @@ export function useBridgeDialog({
 
   const handleDialogClose = (isOpen: boolean) => {
     setOpen(isOpen);
+    // Don't clear the interval here - transaction might still be processing
+    // The interval will only clear when transaction completes/errors or component unmounts
     if (!isOpen && depositProgress?.depositState === DepositState.COMPLETED) {
       setAmount("");
       setDepositProgress(null);
@@ -432,17 +457,14 @@ export function useBridgeDialog({
 
     // Check if amount exceeds balance
     if (depositInfo.balance) {
-      const balanceMatch = depositInfo.balance.match(/[\d,]+\.?\d*/);
-      if (balanceMatch) {
-        const balanceStr = balanceMatch[0].replace(/,/g, "");
-        const balanceNum = parseFloat(balanceStr);
-        if (!isNaN(balanceNum) && amountNum > balanceNum) {
-          toast({
-            description: `Insufficient balance: ${amountNum} > Available ${balanceNum}`,
-            variant: "destructive",
-          });
-          return;
-        }
+      // Using this parseFloat for now later on will do bignumber and more robust handling if needed
+      const balanceNum = parseFloat(depositInfo.balance);
+      if (!isNaN(balanceNum) && amountNum > balanceNum) {
+        toast({
+          description: `Insufficient balance: ${amountNum} > Available ${balanceNum}`,
+          variant: "destructive",
+        });
+        return;
       }
     }
 
@@ -462,12 +484,12 @@ export function useBridgeDialog({
         assetToken.decimals,
         assetToken.symbol,
       );
-       
+
       if (!starknetAddress) {
         throw new Error("Starknet recipient address is not connected");
       }
 
-      // Could use ContractAddr from our strkfarm/sdk but sdk isnt being used anywhere else 
+      // Could use ContractAddr from our strkfarm/sdk but sdk isnt being used anywhere else
       // so thought might not be a great idea
       // Validate + normalize the Starknet address (handles padding, casing, hex format).
       let normalizedRecipient: string;

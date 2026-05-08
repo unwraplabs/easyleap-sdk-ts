@@ -439,15 +439,8 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                             style={{ color: bd.gray1100 }}
                           >
                             {(() => {
-                              const balanceMatch =
-                                depositInfo.balance.match(/[\d,]+\.?\d*/);
-                              if (!balanceMatch) return depositInfo.balance;
-                              const balanceStr = balanceMatch[0].replace(
-                                /,/g,
-                                "",
-                              );
-                              const balanceNum = parseFloat(balanceStr);
-                              if (isNaN(balanceNum)) return depositInfo.balance;
+                              const balanceNum = parseFloat(depositInfo.balance);
+                              if (isNaN(balanceNum)) return "0.00000000";
                               return `${balanceNum.toFixed(8)} ${selectedAsset.SYMBOL}`;
                             })()}
                           </span>
@@ -457,14 +450,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                               style={{ color: bd.gray900 }}
                             >
                               {(() => {
-                                const balanceMatch =
-                                  depositInfo.balance.match(/[\d,]+\.?\d*/);
-                                if (!balanceMatch) return null;
-                                const balanceStr = balanceMatch[0].replace(
-                                  /,/g,
-                                  "",
-                                );
-                                const balanceNum = parseFloat(balanceStr);
+                                const balanceNum = parseFloat(depositInfo.balance);
                                 if (isNaN(balanceNum)) return null;
                                 return `| $${(balanceNum * assetPriceUsd).toFixed(2)}`;
                               })()}

@@ -25,18 +25,14 @@ const WALLET_ICON_MATCHERS: Array<[string, keyof typeof Icons]> = [
 
 export const getWalletIcon = (walletId: string): React.ReactNode => {
   const id = walletId.toLowerCase().replace(/[\s_-]/g, "");
-  
-  console.log("getWalletIcon - original:", walletId, "transformed:", id);
 
   for (const [matcher, iconName] of WALLET_ICON_MATCHERS) {
     if (id.includes(matcher)) {
-      console.log("getWalletIcon - matched:", matcher, "icon:", iconName);
       const WalletIcon = Icons[iconName];
       return <WalletIcon className={WALLET_ICON_CLASS} />;
     }
   }
 
-  console.log("getWalletIcon - no match, using default wallet icon");
   return <Icons.wallet className={WALLET_ICON_CLASS} />;
 };
 
@@ -76,7 +72,9 @@ export const getStepStatus = (
   stepStatuses: BridgeTransferStatus[],
 ): "completed" | "current" | "pending" => {
   const currentIndex = BRIDGE_STATUS_ORDER.indexOf(currentStatus);
-  const stepIndex = Math.max(...stepStatuses.map((s) => BRIDGE_STATUS_ORDER.indexOf(s)));
+  const stepIndex = Math.max(
+    ...stepStatuses.map((s) => BRIDGE_STATUS_ORDER.indexOf(s)),
+  );
 
   if (currentIndex > stepIndex) return "completed";
   if (currentIndex === stepIndex) return "current";
