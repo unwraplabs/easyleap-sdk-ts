@@ -45,19 +45,19 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
       name: "Starkgate",
       iconKey: "bridgeStarkgate",
       isStarkgate: true,
-      supportedAssets: "all",
+      supportedAssets: ["STRK", "WBTC", "tBTC", "LBTC", "solvBTC"],
     },
     {
       name: "Atomiq",
       iconKey: "bridgeAtomiq",
       url: "https://app.atomiq.exchange",
-      supportedAssets: ["WBTC"],
+      supportedAssets: ["WBTC","strkBTC"],
     },
     {
       name: "Garden Finance",
       iconKey: "bridgeGardenFinance",
       url: "https://app.garden.finance",
-      supportedAssets: ["WBTC"],
+      supportedAssets: ["WBTC","strkBTC"],
     },
     {
       name: "Rhino.fi",
@@ -69,7 +69,7 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
       name: "Layerswap",
       iconKey: "bridgeLayerswap",
       url: "https://layerswap.io/app",
-      supportedAssets: "all",
+      supportedAssets: ["STRK", "WBTC", "tBTC", "LBTC", "solvBTC"],
     },
   ];
 

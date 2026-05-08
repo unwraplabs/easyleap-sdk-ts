@@ -131,19 +131,46 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
           .easyleap-bridge-input::placeholder {
             color: ${bd.gray800} !important;
           }
+          .easyleap-bridge-trigger-button {
+            background-color: ${bd.brandGreenDark} !important;
+            color: #ffffff !important;
+          }
         `}
       </style>
       <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogTrigger asChild>
-        <Button
-          className={cn("easyleap-font-firaCode", className)}
-          style={style?.buttonStyles}
-          disabled={isBridgeDisabled}
-          title={isBridgeDisabled ? "Connect Starknet wallet first" : undefined}
-        >
-          Bridge
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="easyleap-inline-block">
+              <DialogTrigger asChild>
+                <Button
+                  className={cn(
+                    className,
+                    "easyleap-bridge-trigger-button !easyleap-cursor-pointer !easyleap-border-none !easyleap-font-inter !easyleap-rounded-[8px] !easyleap-h-[40px] !easyleap-max-h-[40px]",
+                  )}
+                  style={{
+                    ...style?.buttonStyles,
+                  }}
+                  disabled={isBridgeDisabled}
+                >
+                  Bridge
+                </Button>
+              </DialogTrigger>
+            </span>
+          </TooltipTrigger>
+          {isBridgeDisabled && (
+            <TooltipContent
+              className="easyleap-max-w-[240px] easyleap-border easyleap-px-3 easyleap-py-2 easyleap-text-[11px] md:easyleap-text-xs"
+              style={{
+                backgroundColor: bd.white,
+                color: bd.gray1100,
+              }}
+            >
+              Please connect your wallet to bridge funds
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
 
       <DialogContent
         className="!easyleap-w-[350px] md:!easyleap-w-full !easyleap-max-w-[576px] !easyleap-max-h-[90vh] md:!easyleap-max-h-[734px] !easyleap-overflow-y-auto easyleap-rounded-[10px] easyleap-border easyleap-p-3 md:easyleap-p-[16px_13px]"

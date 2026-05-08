@@ -113,6 +113,7 @@ export interface GlobalTheme {
     brandGreenActive?: string;
     brandGreenDark?: string;
     brandGreenDarker?: string;
+    brandGreenDarkest?:string;
     brandGreenLight?: string;
     
     // Gray scale
@@ -268,6 +269,7 @@ const defaultTheme: GlobalTheme = {
     brandGreenActive: "#116652",
     brandGreenDark: "#03624C",
     brandGreenDarker: "#0D5F4E",
+    brandGreenDarkest: "#135638",
     brandGreenLight: "#E8F5F1",
     
     // Gray scale

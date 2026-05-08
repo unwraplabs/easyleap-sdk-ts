@@ -74,7 +74,10 @@ const defaultQueryClient = new QueryClient({
     }
 });
 
-export function defaultEasyleapConfig() {
+export function defaultEasyleapConfig(): {
+    wagmiConfig: WagmiConfig;
+    starknetConfig: StarknetConfigProps;
+} {
     return {
         wagmiConfig: createConfig({
             chains: [mainnetEVM, sepoliaEVM],

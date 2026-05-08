@@ -99,8 +99,18 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
     const stepIndex = Math.max(
       ...stepStatuses.map((s) => BRIDGE_STATUS_ORDER.indexOf(s)),
     );
+    
+    // Check if current status matches any status in this step
+    const isCurrentStep = stepStatuses.some(
+      (status) => BRIDGE_STATUS_ORDER.indexOf(status) === currentStatusIndex
+    );
+    
+    // If current status matches this step, it's currently loading
+    if (isCurrentStep) return "current";
+    
+    // If we've passed this step's status, mark it as completed
     if (currentStatusIndex > stepIndex) return "completed";
-    if (currentStatusIndex === stepIndex) return "current";
+    
     return "pending";
   };
 
@@ -253,7 +263,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
       {depositProgress.depositState === DepositState.COMPLETED && (
         <Button
           onClick={onClose}
-          className="easyleap-w-full easyleap-h-[30px] md:easyleap-h-[40px] easyleap-text-sm md:easyleap-text-base easyleap-font-semibold"
+          className="easyleap-w-full easyleap-border-none easyleap-mt-2 easyleap-h-[30px] md:easyleap-h-[40px] easyleap-text-sm md:easyleap-text-base easyleap-font-semibold"
           style={{
             backgroundColor: cd?.accent || bd.brandGreen,
             color: cd?.accentForeground || bd.white,

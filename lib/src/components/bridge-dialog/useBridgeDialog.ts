@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-
+import { num, validateAndParseAddress } from "starknet";
 import {
   useAccount as useAccountWagmi,
   useConnect as useConnectWagmi,
   useDisconnect as useDisconnectWagmi,
 } from "wagmi";
 import {
+  Address,
   Amount,
   BridgeTransferStatus,
   ConnectedEthereumWallet,
@@ -21,10 +22,6 @@ import { toast } from "@lib/hooks/use-toast";
 
 import { DepositInfo, DepositProgress, LSTAssetConfig } from "./types";
 
-// TODO: TESTING ONLY (Storybook) - remove this mock override before production release.
-// TODO: Revert by deleting this constant and using `starknetAddress` directly.
-const MOCK_STARKNET_ADDRESS_FOR_STORYBOOK =
-  "0x009b2b57f59f93915900eb074fc334661acdade0bc018edf7145e94a64764758" as const;
 interface UseBridgeDialogOptions {
   lstConfig: LSTAssetConfig[];
   onBridgeSuccess?: (txHash: string) => void;
@@ -118,9 +115,6 @@ export function useBridgeDialog({
   const { disconnect: disconnectWagmi } = useDisconnectWagmi();
   const { address: evmAddress, connector: evmConnector } = useAccountWagmi();
   const { starknetAddress } = useAccount();
-  // TODO: TESTING ONLY (Storybook) - remove fallback and use `starknetAddress` directly.
-  const effectiveStarknetAddress =
-    starknetAddress ?? MOCK_STARKNET_ADDRESS_FOR_STORYBOOK;
 
   const uniqueEvm = React.useMemo(
     () =>
@@ -346,16 +340,16 @@ export function useBridgeDialog({
     setupEvmWallet();
   }, [evmAddress, evmConnector, starkzapBridgeWallet]);
 
-  // Close dialog and reset state when Starknet wallet disconnects
+  // Close dialog and reset state when no Starknet recipient address is available.
   useEffect(() => {
-    if (!effectiveStarknetAddress && open) {
+    if (!starknetAddress && open) {
       setOpen(false);
       setAmount("");
       setDepositProgress(null);
       setIsBridging(false);
       setDepositInfo({});
     }
-  }, [effectiveStarknetAddress, open]);
+  }, [starknetAddress, open]);
 
   // Cache Ethereum bridge tokens once per SDK + EVM wallet; asset switches only re-pick from this list.
   useEffect(() => {
@@ -416,7 +410,7 @@ export function useBridgeDialog({
   const handleBridge = async () => {
     if (
       !starkzapBridgeWallet ||
-      !effectiveStarknetAddress ||
+      !starknetAddress ||
       !evmWalletForBridge ||
       !amount
     ) {
@@ -468,9 +462,26 @@ export function useBridgeDialog({
         assetToken.decimals,
         assetToken.symbol,
       );
+       
+      if (!starknetAddress) {
+        throw new Error("Starknet recipient address is not connected");
+      }
+
+      // Could use ContractAddr from our strkfarm/sdk but sdk isnt being used anywhere else 
+      // so thought might not be a great idea
+      // Validate + normalize the Starknet address (handles padding, casing, hex format).
+      let normalizedRecipient: string;
+      try {
+        normalizedRecipient = validateAndParseAddress(starknetAddress);
+      } catch {
+        throw new Error("Invalid Starknet recipient address format");
+      }
+      if (num.toBigInt(normalizedRecipient) === 0n) {
+        throw new Error("Invalid Starknet recipient address (zero address)");
+      }
+
       // `useAccount` returns a hex string type; StarkZap expects branded address type.
-      const recipientAddress =
-        effectiveStarknetAddress as unknown as typeof starkzapBridgeWallet.address;
+      const recipientAddress = normalizedRecipient as Address;
 
       toast({ description: "Please sign the transaction in your wallet..." });
 
@@ -522,7 +533,7 @@ export function useBridgeDialog({
     setIsAssetSelectorOpen,
     // EVM wallet
     evmAddress,
-    starknetAddress: effectiveStarknetAddress,
+    starknetAddress,
     evmConnector,
     uniqueEvm,
     isConnectingEVM,

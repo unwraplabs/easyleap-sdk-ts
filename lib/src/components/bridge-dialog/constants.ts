@@ -13,6 +13,15 @@ export const DEFAULT_LST_CONFIGS: LSTAssetConfig[] = [
     DISPLAY_NAME: "Starknet Token",
   },
   {
+    SYMBOL: "strkBTC",
+    ASSET_ADDRESS:
+      "0x0787150e306e6eae6e3f79dea881770e8bbff2c1b8eb490f969669ee945b3135",
+    LST_SYMBOL: "xstrkBTC",
+    DECIMALS: 8,
+    CATEGORY: "BTC",
+    DISPLAY_NAME: "Endur xstrkBTC",
+  },
+  {
     SYMBOL: "WBTC",
     ASSET_ADDRESS: "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
     LST_SYMBOL: "xWBTC",
