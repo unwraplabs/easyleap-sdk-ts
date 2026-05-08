@@ -24,7 +24,6 @@ export interface PrivyWalletData {
 export interface PrivyContextValue {
   privyWallet: PrivyWalletData | null;
   starkzapWallet: WalletInterface | null;
-  starkzapSdk: StarkZap | null;
   walletSetupStep: "idle" | "creating" | "deploying" | "complete";
   isLoadingWallet: boolean;
   connectPrivy: () => Promise<void>;
@@ -48,7 +47,6 @@ export const PrivyContextProvider: React.FC<{
   const [starkzapWallet, setStarkzapWallet] = useState<WalletInterface | null>(
     null,
   );
-  const [starkzapSdk, setStarkzapSdk] = useState<StarkZap | null>(null);
   const [walletSetupStep, setWalletSetupStep] = useState<
     "idle" | "creating" | "deploying" | "complete"
   >("idle");
@@ -153,8 +151,6 @@ export const PrivyContextProvider: React.FC<{
         },
       });
 
-      setStarkzapSdk(sdk);
-
       const onboard = await sdk.onboard({
         strategy: "privy",
         accountPreset: ArgentXV050Preset,
@@ -209,7 +205,6 @@ export const PrivyContextProvider: React.FC<{
       setWalletSetupStep("idle");
       setPrivyWallet(null);
       setStarkzapWallet(null);
-      setStarkzapSdk(null);
     } finally {
       setIsLoadingWallet(false);
       setupInProgressRef.current = false;
@@ -222,7 +217,6 @@ export const PrivyContextProvider: React.FC<{
       logger.verbose("[PrivyContext] User logged out, clearing wallet state");
       setPrivyWallet(null);
       setStarkzapWallet(null);
-      setStarkzapSdk(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;
       setupInProgressRef.current = false;
@@ -273,7 +267,6 @@ export const PrivyContextProvider: React.FC<{
       await logout();
       setPrivyWallet(null);
       setStarkzapWallet(null);
-      setStarkzapSdk(null);
       setWalletSetupStep("idle");
       lastUserIdRef.current = null;
       setupInProgressRef.current = false;
@@ -286,7 +279,6 @@ export const PrivyContextProvider: React.FC<{
   const value: PrivyContextValue = {
     privyWallet,
     starkzapWallet,
-    starkzapSdk,
     walletSetupStep,
     isLoadingWallet,
     connectPrivy,
@@ -308,7 +300,6 @@ export const usePrivyContext = (): PrivyContextValue => {
     return {
       privyWallet: null,
       starkzapWallet: null,
-      starkzapSdk: null,
       walletSetupStep: "idle",
       isLoadingWallet: false,
       connectPrivy: async () => {
