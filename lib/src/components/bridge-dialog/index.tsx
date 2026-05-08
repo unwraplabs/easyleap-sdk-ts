@@ -381,7 +381,11 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           border: `1px solid ${bd.gray300}`,
                         }}
                       >
-                        {lstConfig.map((asset) => (
+                        {lstConfig
+                          .filter(
+                            (asset) => asset.SYMBOL.toUpperCase() !== "STRKBTC",
+                          )
+                          .map((asset) => (
                           <DropdownMenuItem
                             key={asset.SYMBOL}
                             onClick={() => {

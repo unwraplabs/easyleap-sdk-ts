@@ -728,7 +728,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                     >
                                         <span className="easyleap-rounded-full easyleap-size-7 easyleap-flex easyleap-items-center easyleap-justify-center easyleap-bg-[#fff] easyleap-p-1 easyleap--ml-[15px]">
                                             {isPrivyConnected ? (
-                                                <MailIcon className="easyleap-size-7" />
+                                                <MailIcon className="!easyleap-size-5" />
                                             ) : (
                                                 getWalletIcon(
                                                     connectedSnConnector?.id ??
