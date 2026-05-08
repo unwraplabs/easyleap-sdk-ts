@@ -24,17 +24,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@lib/components/ui/tooltip";
+import { BridgeDialogProps } from "@lib/types";
+import { getAssetIcon, getWalletIcon, walletLabel } from "@lib/utils/bridge-utils";
+import { DEFAULT_LST_CONFIGS, PERCENTAGE_BUTTONS } from "@lib/utils/constants";
 import { cn, shortAddress } from "@lib/utils";
 import { useTheme } from "@lib/contexts/ThemeContext";
-
-import { DEFAULT_LST_CONFIGS, PERCENTAGE_BUTTONS } from "./constants";
 import { DepositProgressView } from "./DepositProgressView";
 import { BridgeOptionsView } from "./BridgeOptionsView";
-import { BridgeDialogProps } from "./types";
 import { useBridgeDialog } from "./useBridgeDialog";
-import { getAssetIcon, getWalletIcon, walletLabel } from "./utils";
 
-export type { BridgeDialogProps, LSTAssetConfig } from "./types";
+export type { BridgeDialogProps, LSTAssetConfig } from "@lib/types";
 
 const ConnectRow: React.FC<{
   label: React.ReactNode;

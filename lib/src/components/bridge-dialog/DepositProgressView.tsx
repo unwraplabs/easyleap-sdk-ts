@@ -5,9 +5,8 @@ import { BridgeTransferStatus, DepositState } from "starkzap";
 
 import { Button } from "@lib/components/ui/button";
 import { useTheme } from "@lib/contexts/ThemeContext";
-
-import { DepositInfo, DepositProgress } from "./types";
-import { BRIDGE_STATUS_ORDER } from "./constants";
+import { DepositInfo, DepositProgress } from "@lib/types";
+import { BRIDGE_STATUS_ORDER } from "@lib/utils/constants";
 
 interface DepositProgressViewProps {
   depositProgress: DepositProgress;

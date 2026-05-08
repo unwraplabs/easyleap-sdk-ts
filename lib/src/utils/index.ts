@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { num } from "starknet";
 import { twMerge } from "tailwind-merge";
 export * from "./constants";
+export * from "./bridge-utils";
 
 export function standardise(address: string | bigint) {
   let _a = address;

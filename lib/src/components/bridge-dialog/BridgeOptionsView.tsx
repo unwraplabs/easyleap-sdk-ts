@@ -3,9 +3,8 @@ import React from "react";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { Icons } from "@lib/components/Icons";
 import { useTheme } from "@lib/contexts/ThemeContext";
+import { LSTAssetConfig } from "@lib/types";
 import { cn } from "@lib/utils";
-
-import { LSTAssetConfig } from "./types";
 
 interface BridgeOptionsViewProps {
   lstConfig: LSTAssetConfig[];

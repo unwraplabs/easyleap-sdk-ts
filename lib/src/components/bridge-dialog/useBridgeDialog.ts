@@ -19,9 +19,9 @@ import { useBridgeStarkzapContext } from "@lib/contexts/BridgeStarkzapContext";
 import { useTheme } from "@lib/contexts/ThemeContext";
 import { useAccount } from "@lib/hooks/useAccount";
 import { toast } from "@lib/hooks/use-toast";
+import { DepositInfo, DepositProgress, LSTAssetConfig } from "@lib/types";
 
-import { DepositInfo, DepositProgress, LSTAssetConfig } from "./types";
-
+// We could keep this file in @lib/hooks folder but keeping it here for now since it is bridge-dialog specific
 interface UseBridgeDialogOptions {
   lstConfig: LSTAssetConfig[];
   onBridgeSuccess?: (txHash: string) => void;
