@@ -65,16 +65,20 @@ export function useAccount(): useAccountResult {
   });
 
   useEffect(() => {
-    if (starknetAddress && chainIdSN != chain.id) {
+    // Only attempt to switch chains if we have a connected Starknet wallet
+    if (starknetAddress && chainIdSN && chainIdSN != chain.id) {
       result.switchChain();
     }
-    if (result.error) console.error("switching", result.error);
-  }, [starknetAddress, chainIdSN, chain]);
+    // Only log errors if we have a connected Starknet wallet
+    if (result.error && starknetAddress) {
+      console.error("switching", result.error);
+    }
+  }, [starknetAddress, chainIdSN, chain, result]);
 
   useEffect(() => {
     // Mode logic:
     // - Only SN wallet → Starknet mode
-    // - Only EVM wallet → EVM mode
+    // - Only EVM wallet → None mode (EVM is only for bridging, not main interaction)
     // - Both connected → Starknet mode (unless manually switched to EVM)
     // - Neither → None mode
     if (!enableEvmMode) {
@@ -87,17 +91,30 @@ export function useAccount(): useAccountResult {
     }
 
     if (evmAddress && starknetAddress) {
+      // Both wallets connected - default to Starknet unless manually switched
       if (!sharedState.isModeSwitchedManually) {
         sharedState.setMode(InteractionMode.Starknet);
       }
     } else if (starknetAddress && !evmAddress) {
+      // Only Starknet wallet connected
       sharedState.setMode(InteractionMode.Starknet);
     } else if (evmAddress && !starknetAddress) {
-      sharedState.setMode(InteractionMode.EVM);
-    } else {
+      // Only EVM wallet connected (from bridge dialog) - set to None
+      // EVM wallet is only for bridging, not for main interaction mode
       sharedState.setMode(InteractionMode.None);
+      // Reset manual switch flag since there's no Starknet wallet
+      if (sharedState.isModeSwitchedManually) {
+        sharedState.setModeSwitchedManually(false);
+      }
+    } else {
+      // Neither wallet connected
+      sharedState.setMode(InteractionMode.None);
+      // Reset manual switch flag
+      if (sharedState.isModeSwitchedManually) {
+        sharedState.setModeSwitchedManually(false);
+      }
     }
-  }, [enableEvmMode, evmAddress, starknetAddress]);
+  }, [enableEvmMode, evmAddress, starknetAddress, sharedState]);
 
   return {
     evmAddress,

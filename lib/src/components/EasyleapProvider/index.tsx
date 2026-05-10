@@ -6,7 +6,6 @@ import {
     voyager
 } from "@starknet-react/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getDefaultConfig } from "connectkit";
 import React from "react";
 import { mainnet as mainnetEVM, sepolia as sepoliaEVM } from "viem/chains";
 import {
@@ -17,10 +16,12 @@ import {
     Config as WagmiConfig,
     WagmiProvider
 } from "wagmi";
+import { coinbaseWallet, walletConnect } from "wagmi/connectors";
 import { PrivyProvider } from "@privy-io/react-auth";
 import type { PrivyClientConfig } from "@privy-io/react-auth";
 
 import { Toaster } from "@lib/components/ui/toaster";
+import { BridgeStarkzapContextProvider } from "@lib/contexts/BridgeStarkzapContext";
 import { SharedStateProvider } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
 import { PrivyContextProvider } from "@lib/contexts/PrivyContext";
@@ -49,6 +50,9 @@ export interface EasyleapConfig {
     starkzap?: {
         rpcUrl?: string;
         network?: "mainnet" | "sepolia";
+        ethereumRpcUrl?: string;
+        layerZeroApiKey?: string;
+        bridgePrivateKey?: string;
     };
     /**
      * UI feature flags. Defaults preserve existing behavior.
@@ -70,41 +74,41 @@ const defaultQueryClient = new QueryClient({
     }
 });
 
-export function defaultEasyleapConfig() {
+export function defaultEasyleapConfig(): {
+    wagmiConfig: WagmiConfig;
+    starknetConfig: StarknetConfigProps;
+} {
     return {
-        wagmiConfig: createConfig(
-            getDefaultConfig({
-                // Your dApps chains
-                chains: [mainnetEVM, sepoliaEVM],
-                transports: {
-                    // RPC URL for each chain
-                    [mainnetEVM.id]: http(
-                        `https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
-                    ),
-                    [sepoliaEVM.id]: http(
-                        `https://eth-sepolia.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
-                    )
-                },
-
-                // Server Side Rendering
-                ssr: true,
-
-                // Enable persistence
-                storage: createStorage({ storage: cookieStorage }),
-
-                // Required API Keys
-                walletConnectProjectId: WALLET_CONNECT_DEFAULT_PROJECT_ID,
-
-                // Required App Info
-                appName: "Easyleap",
-
-                // Optional App Info
-                appDescription:
-                    "Bridge funds to Starknet dApps in a single click",
-                appUrl: "https://easyleap.com", // your app's url
-                appIcon: "https://easyleap.com/logo.png" // your app's icon, no bigger than 1024x1024px (max. 1MB)
-            })
-        ),
+        wagmiConfig: createConfig({
+            chains: [mainnetEVM, sepoliaEVM],
+            transports: {
+                [mainnetEVM.id]: http(
+                    `https://eth-mainnet.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
+                ),
+                [sepoliaEVM.id]: http(
+                    `https://eth-sepolia.g.alchemy.com/v2/vwxBDYHrRCl3C5uuzZqj1`
+                )
+            },
+            connectors: [
+               walletConnect({
+                    projectId: WALLET_CONNECT_DEFAULT_PROJECT_ID,
+                    // TODO: putting on endur, will make dynamic later on
+                    metadata: {
+                        name: "Endur",
+                        description: "Bridge funds to Starknet dApps in a single click",
+                        url: "https://endur.fi",
+                        icons: ["https://endur.fi/logo.png"]
+                    },
+                    showQrModal: true,
+                }),
+                coinbaseWallet({
+                    appName: "Endur",
+                    appLogoUrl: "https://endur.fi/logo.png",
+                }),
+            ],
+            ssr: true,
+            storage: createStorage({ storage: cookieStorage }),
+        }),
         starknetConfig: {
             chains: [mainnet, sepolia],
             provider: publicProvider(),
@@ -170,6 +174,67 @@ export function EasyleapProvider(
         );
     }, [props.starkzap?.rpcUrl]);
 
+    const starkzapNetwork = React.useMemo(() => {
+        return (
+            props.starkzap?.network ??
+            ((readEnv("NEXT_PUBLIC_CHAIN_ID") ?? readEnv("VITE_CHAIN_ID")) ===
+            "SN_MAIN"
+                ? "mainnet"
+                : "sepolia")
+        );
+    }, [props.starkzap?.network]);
+
+    const ethereumRpcUrl = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.ethereumRpcUrl === "string"
+                ? props.starkzap.ethereumRpcUrl.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_ETHEREUM_RPC_URL") ??
+            readEnv("VITE_ETHEREUM_RPC_URL");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing Ethereum RPC url. Provide `starkzap.ethereumRpcUrl` or set NEXT_PUBLIC_ETHEREUM_RPC_URL / VITE_ETHEREUM_RPC_URL."
+        );
+    }, [props.starkzap?.ethereumRpcUrl]);
+
+    const layerZeroApiKey = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.layerZeroApiKey === "string"
+                ? props.starkzap.layerZeroApiKey.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_LAYERZERO_API_KEY") ??
+            readEnv("VITE_LAYERZERO_API_KEY");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing LayerZero API key. Provide `starkzap.layerZeroApiKey` or set NEXT_PUBLIC_LAYERZERO_API_KEY / VITE_LAYERZERO_API_KEY."
+        );
+    }, [props.starkzap?.layerZeroApiKey]);
+
+    const bridgePrivateKey = React.useMemo(() => {
+        const fromProps =
+            typeof props.starkzap?.bridgePrivateKey === "string"
+                ? props.starkzap.bridgePrivateKey.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_BRIDGE_PRIVATE_KEY") ??
+            readEnv("VITE_BRIDGE_PRIVATE_KEY");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        throw new Error(
+            "EasyleapProvider: Missing bridge private key. Provide `starkzap.bridgePrivateKey` or set NEXT_PUBLIC_BRIDGE_PRIVATE_KEY / VITE_BRIDGE_PRIVATE_KEY."
+        );
+    }, [props.starkzap?.bridgePrivateKey]);
+
     return (
         <SharedStateProvider ui={props.ui}>
             <ThemeProvider theme={props.theme}>
@@ -181,27 +246,32 @@ export function EasyleapProvider(
                         <PrivyContextProvider
                             config={{
                                 rpcUrl: starkzapRpcUrl,
-                                network:
-                                    props.starkzap?.network ??
-                                    ((readEnv("NEXT_PUBLIC_CHAIN_ID") ??
-                                        readEnv("VITE_CHAIN_ID")) === "SN_MAIN"
-                                        ? "mainnet"
-                                        : "sepolia"),
+                                network: starkzapNetwork,
                             }}
                         >
-                            <WagmiProvider config={wagmiConfig}>
-                                <StarknetConfig
-                                    chains={starknetConfig.chains || [mainnet]}
-                                    provider={starknetConfig.provider}
-                                    explorer={starknetConfig.explorer}
-                                    connectors={
-                                        starknetConfig?.connectors || []
-                                    }
-                                >
-                                    {props.children}
-                                    <Toaster />
-                                </StarknetConfig>
-                            </WagmiProvider>
+                            <BridgeStarkzapContextProvider
+                                config={{
+                                    rpcUrl: starkzapRpcUrl,
+                                    network: starkzapNetwork,
+                                    ethereumRpcUrl,
+                                    layerZeroApiKey,
+                                    privateKey: bridgePrivateKey,
+                                }}
+                            >
+                                <WagmiProvider config={wagmiConfig}>
+                                    <StarknetConfig
+                                        chains={starknetConfig.chains || [mainnet]}
+                                        provider={starknetConfig.provider}
+                                        explorer={starknetConfig.explorer}
+                                        connectors={
+                                            starknetConfig?.connectors || []
+                                        }
+                                    >
+                                        {props.children}
+                                        <Toaster />
+                                    </StarknetConfig>
+                                </WagmiProvider>
+                            </BridgeStarkzapContextProvider>
                         </PrivyContextProvider>
                     </PrivyProvider>
                 </QueryClientProvider>

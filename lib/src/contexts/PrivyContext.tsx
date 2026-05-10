@@ -179,7 +179,9 @@ export const PrivyContextProvider: React.FC<{
               headers: async () => {
                 const token = await getAccessToken();
                 if (!token) {
-                  throw new Error("Failed to get access token for wallet signing");
+                  throw new Error(
+                    "Failed to get access token for wallet signing",
+                  );
                 }
                 return { Authorization: `Bearer ${token}` };
               },

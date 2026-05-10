@@ -1,31 +1,25 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 
-import { ConnectButton } from "./index";
+import { BridgeButton } from "./index";
 
 const meta = {
-  title: "Components/ConnectButton",
-  component: ConnectButton,
+  title: "Components/BridgeButton",
+  component: BridgeButton,
   parameters: {
-    layout: "centered"
+    layout: "centered",
   },
-
   tags: ["autodocs"],
-
   argTypes: {
     style: { control: { type: "object" } },
-    className: { control: { type: "text" } }
+    className: { control: { type: "text" } },
   },
-
   args: {
-    onConnectStarknet: fn(),
-    onDisconnectStarknet: fn(),
-    onConnectEVM: fn(),
-    onDisconnectEVM: fn()
+    onBridgeSuccess: fn(),
+    onBridgeError: fn(),
   },
-
-  decorators: [(Story) => <Story />]
-} satisfies Meta<typeof ConnectButton>;
+  decorators: [(Story) => <Story />],
+} satisfies Meta<typeof BridgeButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -37,6 +31,9 @@ export const Default: Story = {
         color: "#03624C",
         backgroundColor: "#AACBC433",
         border: "1px solid #ECECED80",
+      },
+      modalStyles: {
+        borderRadius: "10px",
       },
     },
     className:

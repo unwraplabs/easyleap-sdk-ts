@@ -407,6 +407,12 @@ const WalletConnectPanel: React.FC<{
                                         } else {
                                             disconnectSN();
                                         }
+                                        // This ensures EVM is also disconnected from the bridge
+                                        if (evmAddress) {
+                                            onDisconnectEvmSideEffects();
+                                            disconnectWagmi();
+                                            onDisconnectEVM?.();
+                                        }
                                         onDisconnectStarknet?.();
                                     }}
                                 />
@@ -585,10 +591,10 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
             <wallet.Icon
                 key={walletId}
                 // This will ensure consistent sizing
-                className={"easyleap-size-8 easyleap-p-1"}
+                className={"easyleap-size-7 easyleap-p-1"}
             />
         ) : (
-            <Icons.wallet className="easyleap-size-8 easyleap-p-1" />
+            <Icons.wallet className="easyleap-size-7 easyleap-p-1" />
         );
     };
 
@@ -596,11 +602,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
     const starknetConnectorName = connectedSnConnector?.name;
 
     const onDisconnectEvmSideEffects = () => {
-        if (!starknetAddress) {
-            sharedState.setMode(InteractionMode.None);
-        } else {
-            sharedState.setMode(InteractionMode.Starknet);
-        }
+        // Don't manually set mode here - let useAccount hook handle it automatically
+        // The mode will be set based on remaining connected wallets
     };
 
     const modalShellStyle: React.CSSProperties = {
@@ -650,21 +653,23 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
 
     return (
         <div
-            className={cn(
-                "easyleap-w-full easyleap-z-10 easyleap-flex easyleap-items-center easyleap-gap-4 md:easyleap-flex-row easyleap-rounded-[50px]",
-                {
-                    "easyleap-bg-white easyleap-px-2 easyleap-pt-1 easyleap-pb-1":
-                        evmAddress || starknetAddress
-                }
-            )}
-            style={{
-                backgroundColor:
-                    evmAddress || starknetAddress
-                        ? mode === InteractionMode.EVM
-                            ? theme?.evmMode?.mainBgColor
-                            : theme?.starknetMode?.mainBgColor
-                        : undefined
-            }}
+            // TODO:  Dont need and outer div classing as of now, will look again if needed in future
+            //
+            // className={cn(
+            //     "easyleap-w-full easyleap-z-10 easyleap-flex easyleap-items-center easyleap-gap-4 md:easyleap-flex-row easyleap-rounded-[50px]",
+            //     {
+            //         "easyleap-bg-white easyleap-px-2 easyleap-pt-1 easyleap-pb-1":
+            //             evmAddress || starknetAddress
+            //     }
+            // )}
+            // style={{
+            //     backgroundColor:
+            //         evmAddress || starknetAddress
+            //             ? mode === InteractionMode.EVM
+            //                 ? theme?.evmMode?.mainBgColor
+            //                 : theme?.starknetMode?.mainBgColor
+            //             : undefined
+            // }}
         >
             <Dialog
                 open={sharedState.connectWalletModalOpen}
@@ -675,7 +680,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
             >
                 <div className="easyleap-w-full easyleap-flex md:easyleap-flex-row gap-2">
                     <DialogTrigger asChild>
-                        <div className="easyleap-w-full easyleap-font-firaCode easylea-items-center easyleap-flex">
+                        <div className="easyleap-w-full easyleap-font-firaCode easyleap-items-center easyleap-flex">
                             {!evmAddress && !starknetAddress && (
                                 <Button
                                     variant="outline"
@@ -693,11 +698,11 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                         ...style?.buttonStyles
                                     }}
                                     className={cn(
-                                        "easyleap-rounded-[50px] easyleap-text-center easyleap-text-white easyleap-h-full",
+                                        "easyleap-text-center easyleap-w-[150px] md:easyleap-w-[172px] !easyleap-font-inter easyleap-text-white !easyleap-font-medium !easyleap-h-[40px] !easyleap-max-h-[40px]",
                                         className
                                     )}
                                 >
-                                    Connect wallet
+                                    Connect Wallet
                                 </Button>
                             )}
 
@@ -717,13 +722,13 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                                     ?.borderRadius
                                         }}
                                         className={cn(
-                                            "easyleap-mx-auto easyleap-flex easyleap-w-fit easyleap-items-center easyleap-justify-start easyleap-gap-3 easyleap-font-medium hover:easyleap-bg-transparent easyleap-rounded-[50px]",
+                                            "easyleap-mx-auto easyleap-flex easyleap-w-[150px] md:easyleap-w-[172px] easyleap-items-center easyleap-justify-start easyleap-gap-3 !easyleap-font-medium hover:easyleap-bg-transparent easyleap-rounded-[60px] !easyleap-px-6 !easyleap-py-5 !easyleap-h-[40px] !easyleap-max-h-[40px]",
                                             className
                                         )}
                                     >
-                                        <span className="easyleap-rounded-full easyleap-bg-[#fff] easyleap-p-1 easyleap--ml-[15px]">
+                                        <span className="easyleap-rounded-full easyleap-size-7 easyleap-flex easyleap-items-center easyleap-justify-center easyleap-bg-[#fff] easyleap-p-1 easyleap--ml-[15px]">
                                             {isPrivyConnected ? (
-                                                <MailIcon className="easyleap-size-5" />
+                                                <MailIcon className="!easyleap-size-5" />
                                             ) : (
                                                 getWalletIcon(
                                                     connectedSnConnector?.id ??
@@ -773,6 +778,32 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                     </button>
                                 </Button>
                             )}
+
+                            {/* // TODO: this technically will not happen -> but keeping in case of fallback */}
+                            {mode === InteractionMode.None && evmAddress && !starknetAddress && (
+                                <Button
+                                    variant="outline"
+                                    style={{
+                                        color:
+                                            style?.buttonStyles?.color ||
+                                            theme?.noneMode?.color,
+                                        backgroundColor:
+                                            style?.buttonStyles
+                                                ?.backgroundColor ||
+                                            theme?.noneMode?.backgroundColor,
+                                        border:
+                                            style?.buttonStyles?.border ||
+                                            theme?.noneMode?.border,
+                                        ...style?.buttonStyles
+                                    }}
+                                    className={cn(
+                                        "easyleap-rounded-[50px] easyleap-text-center easyleap-text-white easyleap-h-full",
+                                        className
+                                    )}
+                                >
+                                    Connect wallet
+                                </Button>
+                            )}
                         </div>
                     </DialogTrigger>
 
@@ -794,7 +825,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                             className="easyleap-text-xl easyleap-font-medium md:easyleap-text-2xl"
                             style={{ color: cd.titleColor }}
                         >
-                            Connect Wallet
+                            Connect wallet
                         </DialogTitle>
                     </DialogHeader>
 
