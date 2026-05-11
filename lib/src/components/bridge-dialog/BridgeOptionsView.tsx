@@ -2,8 +2,10 @@ import React from "react";
 
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { Icons } from "@lib/components/Icons";
+import { useAnalytics } from "@lib/contexts/AnalyticsContext";
 import { useTheme } from "@lib/contexts/ThemeContext";
 import { LSTAssetConfig } from "@lib/types";
+import { BridgeEvents } from "@lib/utils/analytics";
 import { cn } from "@lib/utils";
 
 interface BridgeOptionsViewProps {
@@ -32,6 +34,7 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
   onAssetChange,
   onStarkgateSelect,
 }) => {
+  const { track } = useAnalytics();
   const theme = useTheme();
   const bd = theme.bridgeDialog!;
 
@@ -81,6 +84,12 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
   });
 
   const handleProviderClick = (provider: BridgeProvider) => {
+    track(BridgeEvents.PROVIDER_SELECTED, {
+      provider: provider.name,
+      asset: selectedAsset.SYMBOL,
+      isExternal: !provider.isStarkgate,
+    });
+
     if (provider.isStarkgate) {
       onStarkgateSelect();
     } else if (provider.url) {
@@ -113,6 +122,10 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
                 type="button"
                 onClick={() => {
                   if (lstAsset) {
+                    track(BridgeEvents.ASSET_SELECTED, {
+                      asset: lstAsset.SYMBOL,
+                      context: "bridge_options",
+                    });
                     onAssetChange(lstAsset);
                   }
                 }}

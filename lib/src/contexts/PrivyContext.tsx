@@ -215,15 +215,29 @@ export const PrivyContextProvider: React.FC<{
       setStarkzapWallet(null);
       lastUserIdRef.current = null;
 
-      //   Clear Privy session so the user can re-login
+      // Clear Privy session so the user can re-login
       try {
         await logout();
       } catch {
         // Logout may fail if session is already invalid; clear storage manually
       }
 
-      setIsLoadingWallet(false);
-      setupInProgressRef.current = false;
+      // Safety net: remove known Privy localStorage keys
+      const privyKeys = [
+        "privy:token",
+        "privy:pat",
+        "privy:refresh_token",
+        "privy:state_code",
+        "privy:code_verifier",
+        "privy:connections",
+      ];
+      for (const k of privyKeys) {
+        try {
+          localStorage.removeItem(k);
+        } catch {
+          // ignore (SSR or storage unavailable)
+        }
+      }
     } finally {
       setIsLoadingWallet(false);
       setupInProgressRef.current = false;
