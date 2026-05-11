@@ -39,6 +39,32 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
     symbol: asset.SYMBOL,
   }));
 
+  // Helper function to generate dynamic URLs based on provider and asset
+  const getBridgeUrl = (providerName: string, asset: string): string => {
+    const assetUpper = asset.toUpperCase();
+
+    switch (providerName) {
+      case "Garden Finance":
+        // Garden Finance: WBTC and strkBTC both use WBTC for now, will change later on
+        return "https://app.garden.finance/bridge/starknet?input-chain=bitcoin&input-asset=BTC&output-asset=WBTC";
+
+      case "Rhino.fi":
+        // Rhino.fi: Only WBTC is supported and that too on Ethereum Chain
+        return "https://app.rhino.fi/bridge?mode=pay&chainIn=ETHEREUM&chainOut=STARKNET&token=WBTC&tokenOut=WBTC";
+
+      case "Layerswap":
+        // Layerswap: Dynamic URLs for all supported assets
+        return `https://layerswap.io/app?from=BITCOIN_MAINNET&to=STARKNET_MAINNET&fromAsset=BTC&toAsset=${assetUpper}`;
+
+      case "Atomiq":
+        // Atomiq: Static URL (doesn't support dynamic links)
+        return "https://app.atomiq.exchange";
+
+      default:
+        return "";
+    }
+  };
+
   const bridgeProviders: BridgeProvider[] = [
     {
       name: "Starkgate",
@@ -49,26 +75,26 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
     {
       name: "Atomiq",
       iconKey: "bridgeAtomiq",
-      url: "https://app.atomiq.exchange",
+      url: getBridgeUrl("Atomiq", selectedAsset.SYMBOL),
       supportedAssets: ["WBTC","strkBTC"],
     },
     {
       name: "Garden Finance",
       iconKey: "bridgeGardenFinance",
-      url: "https://app.garden.finance",
+      url: getBridgeUrl("Garden Finance", selectedAsset.SYMBOL),
       supportedAssets: ["WBTC","strkBTC"],
     },
     {
       name: "Rhino.fi",
       iconKey: "bridgeRhino",
-      url: "https://app.rhino.fi",
+      url: getBridgeUrl("Rhino.fi", selectedAsset.SYMBOL),
       supportedAssets: ["WBTC"],
     },
     {
       name: "Layerswap",
       iconKey: "bridgeLayerswap",
-      url: "https://layerswap.io/app",
-      supportedAssets: ["STRK", "WBTC", "tBTC", "LBTC", "solvBTC"],
+      url: getBridgeUrl("Layerswap", selectedAsset.SYMBOL),
+      supportedAssets: ["STRK", "WBTC", "tBTC", "LBTC"],
     },
   ];
 
@@ -89,14 +115,16 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
   };
 
   return (
-    <div className="easyleap-flex easyleap-flex-col easyleap-gap-6">
+    <div
+      className="easyleap-flex easyleap-flex-col easyleap-gap-6"
+      style={{ fontFamily: bd.fontFamily }}
+    >
       {/* Select Asset Section */}
       <div className="easyleap-flex easyleap-flex-col easyleap-gap-3">
         <p
           className="easyleap-text-sm easyleap-font-medium"
           style={{
             color: bd.gray1100,
-            fontFamily: "Inter, sans-serif",
             letterSpacing: "-0.15px",
           }}
         >
@@ -138,7 +166,6 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
                     bd.gray50,
                   "--easyleap-bridge-asset-chip-hover-border":
                     bd.gray700,
-                  fontFamily: "Inter, sans-serif",
                   letterSpacing: "-0.15px",
                 } as React.CSSProperties}
               >
@@ -155,7 +182,6 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
           className="easyleap-text-sm easyleap-font-medium"
           style={{
             color: bd.gray1100,
-            fontFamily: "Inter, sans-serif",
             letterSpacing: "-0.15px",
           }}
         >
@@ -189,10 +215,9 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
                 </div>
                 <div className="easyleap-flex easyleap-flex-col easyleap-items-start easyleap-gap-0.5 md:easyleap-flex-row md:easyleap-items-center md:easyleap-gap-2">
                   <span
-                    className="easyleap-text-base easyleap-font-normal"
+                    className="easyleap-text-base easyleap-font-medium"
                     style={{
                       color: bd.gray1200,
-                      fontFamily: "Inter, sans-serif",
                       letterSpacing: "-0.31px",
                     }}
                   >

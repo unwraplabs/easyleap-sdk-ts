@@ -100,6 +100,11 @@ export interface GlobalTheme {
     closeButtonColor?: string;
     moreOptionsBackground?: string;
     moreOptionsTextColor?: string;
+    /**
+     * Primary font stack for connect trigger, modal, and mode switch (e.g. `"Figtree", sans-serif`).
+     * Host apps using `next/font` can pass `font.style.fontFamily` here for optimized loading.
+     */
+    fontFamily?: string;
   };
 
   /** Bridge dialog colors */
@@ -139,6 +144,11 @@ export interface GlobalTheme {
     modalBorderRadius?: string;
     providerExternalIconOpacity?: number;
     providerExternalIconHoverOpacity?: number;
+    /**
+     * Primary font stack for bridge dialog (trigger, modal, options, progress).
+     * Host apps using `next/font` can pass `font.style.fontFamily` here.
+     */
+    fontFamily?: string;
 
     
     // Component-specific aliases (currently unused in bridge-dialog views)
@@ -257,7 +267,8 @@ const defaultTheme: GlobalTheme = {
     rowBorder: "1px solid #3F3F5F",
     rowHoverBackground: "#2A2A45",
     rowTextColor: "#E8E8F0",
-    closeButtonColor: "#B4A7D6"
+    closeButtonColor: "#B4A7D6",
+    fontFamily: '__Figtree_ea4a8b,__Figtree_Fallback_ea4a8b, Figtree, sans-serif'
   },
 
   bridgeDialog: {
@@ -296,6 +307,7 @@ const defaultTheme: GlobalTheme = {
     modalBorderRadius: "10px",
     providerExternalIconOpacity: 0.4,
     providerExternalIconHoverOpacity: 0.7,
+    fontFamily: '__Figtree_ea4a8b,__Figtree_Fallback_ea4a8b, Figtree, sans-serif',
 
     // Component-specific aliases using base colors (currently unused in bridge-dialog views)
     // modalBackground: "#FFFFFF", // white

@@ -114,7 +114,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
   };
 
   return (
-    <div>
+    <div style={{ fontFamily: bd.fontFamily }}>
       <div className="easyleap-hidden" aria-hidden="true">
         {amount} {depositInfo.estimatedFees?.usdValue ?? ""}
       </div>
@@ -141,7 +141,6 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
               className="easyleap-text-lg easyleap-font-medium"
               style={{
                 color: bd.gray1200,
-                fontFamily: "Inter, sans-serif",
                 letterSpacing: "-0.45px",
               }}
             >
@@ -155,7 +154,6 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
               className="easyleap-text-xs"
               style={{
                 color: bd.gray900,
-                fontFamily: "Inter, sans-serif",
                 letterSpacing: "-0.15px",
               }}
             >
@@ -216,8 +214,7 @@ export const DepositProgressView: React.FC<DepositProgressViewProps> = ({
                           className="easyleap-text-[11px]"
                           style={{ color: bd.gray900 }}
                         >
-                          (This can take a while, you can close the dialog if
-                          you wish to)
+                          (Usually around 3mins, but can take longer depending on network activity)
                         </p>
                       )}
                       {step.link && status !== "pending" && (

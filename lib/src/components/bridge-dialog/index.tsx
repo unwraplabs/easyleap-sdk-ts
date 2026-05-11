@@ -145,9 +145,10 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                 <Button
                   className={cn(
                     className,
-                    "easyleap-bridge-trigger-button !easyleap-cursor-pointer !easyleap-border-none !easyleap-font-inter !easyleap-rounded-[8px] !easyleap-h-[40px] !easyleap-max-h-[40px]",
+                    "easyleap-bridge-trigger-button !easyleap-cursor-pointer !easyleap-border-none !easyleap-font-medium !easyleap-rounded-[8px] !easyleap-h-[40px] !easyleap-max-h-[40px]",
                   )}
                   style={{
+                    fontFamily: bd.fontFamily,
                     ...style?.buttonStyles,
                   }}
                   disabled={isBridgeDisabled}
@@ -177,6 +178,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
           backgroundColor: bd.white,
           border: bd.modalBorder,
           boxShadow: "0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+          fontFamily: bd.fontFamily,
           ...style?.modalStyles,
         }}
       >
@@ -196,10 +198,9 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
             </button>
           )}
           <DialogTitle
-            className="easyleap-flex-1 easyleap-text-left easyleap-text-lg md:easyleap-text-2xl easyleap-font-semibold easyleap-leading-6 md:easyleap-leading-8"
+            className="easyleap-flex-1 easyleap-text-left easyleap-text-lg md:easyleap-text-2xl !easyleap-font-medium easyleap-leading-6 md:easyleap-leading-8"
             style={{
               color: bd.brandGreenDark,
-              fontFamily: "Inter, sans-serif",
               letterSpacing: "0.07px",
             }}
           >
@@ -213,7 +214,6 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
             className="easyleap-text-sm easyleap-leading-5"
             style={{
               color: bd.brandGreenDark,
-              fontFamily: "Inter, sans-serif",
               letterSpacing: "-0.15px",
             }}
           >
@@ -240,18 +240,17 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
               className="easyleap-text-xs md:easyleap-text-sm"
               style={{
                 color: bd.brandGreenDark,
-                fontFamily: "Inter, sans-serif",
                 letterSpacing: "-0.15px",
               }}
             >
               Receiving on Starknet wallet
             </span>
             <span
-              className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
+              className="!easyleap-text-sm md:!easyleap-text-lg"
               style={{ color: bd.gray1200, letterSpacing: "-0.44px" }}
             >
               {starknetAddress
-                ? shortAddress(starknetAddress.toString(), 8, 8)
+                ? shortAddress(starknetAddress.toString(), 6, 6)
                 : "Not connected"}
             </span>
           </div>
@@ -300,7 +299,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                       {walletLabel(String(evmConnector?.name ?? "EVM"))}
                     </span>
                     <span
-                      className="!easyleap-text-sm md:!easyleap-text-lg easyleap-font-inter"
+                      className="!easyleap-text-sm md:!easyleap-text-lg"
                       style={{
                         color: bd.gray1200,
                         letterSpacing: "-0.44px",
@@ -378,6 +377,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                         style={{
                           backgroundColor: bd.white,
                           border: `1px solid ${bd.gray300}`,
+                          fontFamily: bd.fontFamily,
                         }}
                       >
                         {lstConfig
@@ -473,7 +473,6 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           disabled={isBridging || isLoadingInfo}
                           className="easyleap-bridge-input !easyleap-h-[24px] md:!easyleap-h-[29px] !easyleap-py-0 easyleap-text-xl md:!easyleap-text-2xl easyleap-flex-1 !easyleap-border-0 !easyleap-bg-transparent easyleap-p-0 easyleap-pr-1 !easyleap-shadow-none !easyleap-outline-none focus-visible:!easyleap-ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:easyleap-appearance-none [&::-webkit-outer-spin-button]:easyleap-appearance-none"
                           style={{
-                            fontFamily: "Inter, sans-serif",
                             letterSpacing: "0.07px",
                             // @ts-expect-error - CSS custom property for placeholder color
                             "--placeholder-color": bd.gray800,
