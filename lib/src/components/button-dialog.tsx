@@ -56,6 +56,7 @@ const WalletConnectPanel: React.FC<{
     onDisconnectEVM?: () => void;
     onDisconnectEvmSideEffects: () => void;
     getWalletIcon: (walletId: string) => React.ReactNode;
+    sharedState: ReturnType<typeof useSharedState>;
 }> = ({
     chainFilter,
     enableEvmMode,
@@ -72,7 +73,8 @@ const WalletConnectPanel: React.FC<{
     onDisconnectStarknet,
     onDisconnectEVM,
     onDisconnectEvmSideEffects,
-    getWalletIcon
+    getWalletIcon,
+    sharedState
 }) => {
     const {
         connectors: snConnectors,
@@ -169,7 +171,7 @@ const WalletConnectPanel: React.FC<{
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
+            className="easyleap-flex easyleap-w-full easyleap-items-center !easyleap-font-medium easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
             style={panelRowBase}
         >
             <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
@@ -209,6 +211,9 @@ const WalletConnectPanel: React.FC<{
                                                 } else {
                                                     connectSN({ connector } as any);
                                                 }
+                                                setTimeout(() => {
+                                                    sharedState.setConnectWalletModalOpen(false);
+                                                }, 500);
                                             } catch (err: any) {
                                                 console.error(
                                                     "Failed to connect Starknet wallet:",
@@ -234,9 +239,12 @@ const WalletConnectPanel: React.FC<{
                                 onClick={async () => {
                                     await connectPrivy();
                                     onConnectStarknet?.();
+                                    setTimeout(() => {
+                                        sharedState.setConnectWalletModalOpen(false);
+                                    }, 500);
                                 }}
                                 disabled={isLoadingWallet}
-                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
+                                className="easyleap-flex easyleap-w-full easyleap-items-center easyleap-gap-5 !easyleap-font-medium easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
                                 style={panelRowBase}
                             >
                                 <span
@@ -274,6 +282,9 @@ const WalletConnectPanel: React.FC<{
                                                 } else {
                                                     connectSN({ connector } as any);
                                                 }
+                                                setTimeout(() => {
+                                                    sharedState.setConnectWalletModalOpen(false);
+                                                }, 500);
                                             } catch (err: any) {
                                                 console.error(
                                                     "Failed to connect Starknet wallet:",
@@ -327,6 +338,9 @@ const WalletConnectPanel: React.FC<{
                                                                 } else {
                                                                     connectSN({ connector } as any);
                                                                 }
+                                                                setTimeout(() => {
+                                                                    sharedState.setConnectWalletModalOpen(false);
+                                                                }, 500);
                                                             } catch (err: any) {
                                                                 console.error(
                                                                     "Failed to connect Starknet wallet:",
@@ -367,7 +381,7 @@ const WalletConnectPanel: React.FC<{
                                       "Starknet")}
                             </p>
 
-                            <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-firaCode easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
+                            <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
                                 <div className="easyleap-flex easyleap-items-center easyleap-justify-start easyleap-gap-3">
                                     <span
                                         className={cn(
@@ -440,6 +454,9 @@ const WalletConnectPanel: React.FC<{
                                     onClick={() => {
                                         connectEVM({ connector });
                                         onConnectEVM?.();
+                                        setTimeout(() => {
+                                            sharedState.setConnectWalletModalOpen(false);
+                                        }, 500);
                                     }}
                                 />
                             ))}
@@ -612,6 +629,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         borderRadius: cd.modalBorderRadius,
         color: cd.rowTextColor,
         boxShadow: "0 24px 80px rgba(0,0,0,0.45)",
+        ...(cd.fontFamily ? { fontFamily: cd.fontFamily } : {}),
         ...style?.modalStyles
     };
 
@@ -680,7 +698,14 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
             >
                 <div className="easyleap-w-full easyleap-flex md:easyleap-flex-row gap-2">
                     <DialogTrigger asChild>
-                        <div className="easyleap-w-full easyleap-font-firaCode easyleap-items-center easyleap-flex">
+                        <div
+                            className="easyleap-w-full easyleap-items-center easyleap-flex"
+                            style={
+                                cd.fontFamily
+                                    ? { fontFamily: cd.fontFamily }
+                                    : undefined
+                            }
+                        >
                             {!evmAddress && !starknetAddress && (
                                 <Button
                                     variant="outline"
@@ -698,7 +723,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                         ...style?.buttonStyles
                                     }}
                                     className={cn(
-                                        "easyleap-text-center easyleap-w-[150px] md:easyleap-w-[172px] !easyleap-font-inter easyleap-text-white !easyleap-font-medium !easyleap-h-[40px] !easyleap-max-h-[40px]",
+                                        "easyleap-text-center easyleap-w-[150px] md:easyleap-w-[172px] easyleap-text-white !easyleap-font-bold !easyleap-h-[40px] !easyleap-max-h-[40px]",
                                         className
                                     )}
                                 >
@@ -722,7 +747,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                                     ?.borderRadius
                                         }}
                                         className={cn(
-                                            "easyleap-mx-auto easyleap-flex easyleap-w-[150px] md:easyleap-w-[172px] easyleap-items-center easyleap-justify-start easyleap-gap-3 !easyleap-font-medium hover:easyleap-bg-transparent easyleap-rounded-[60px] !easyleap-px-6 !easyleap-py-5 !easyleap-h-[40px] !easyleap-max-h-[40px]",
+                                            "easyleap-mx-auto easyleap-flex easyleap-w-[150px] md:easyleap-w-[172px] easyleap-items-center easyleap-justify-start easyleap-gap-3 !easyleap-font-bold hover:easyleap-bg-transparent easyleap-rounded-[60px] !easyleap-px-6 !easyleap-py-5 !easyleap-h-[40px] !easyleap-max-h-[40px]",
                                             className
                                         )}
                                     >
@@ -811,7 +836,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                 </div>
 
                 <DialogContent
-                    className="easyleap-flex easyleap-max-h-[85dvh] easyleap-flex-col easyleap-gap-5 easyleap-overflow-y-auto easyleap-p-4 easyleap-font-dmSans md:easyleap-p-6"
+                    className="easyleap-flex easyleap-max-h-[85dvh] easyleap-flex-col easyleap-gap-5 easyleap-overflow-y-auto easyleap-p-4 md:easyleap-p-6"
                     style={modalShellStyle}
                     closeClassName="easyleap-opacity-90 hover:easyleap-opacity-100"
                     closeStyle={
@@ -904,12 +929,13 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                         onDisconnectEVM={onDisconnectEVM}
                         onDisconnectEvmSideEffects={onDisconnectEvmSideEffects}
                         getWalletIcon={getWalletIcon}
+                        sharedState={sharedState}
                     />
 
                     {(evmAddress || starknetAddress) && (
                         <DialogTrigger asChild>
                             <Button
-                                className="easyleap-mt-1 easyleap-w-full easyleap-rounded-xl easyleap-py-3 easyleap-font-firaCode easyleap-font-semibold"
+                                className="easyleap-mt-1 easyleap-w-full easyleap-rounded-xl easyleap-py-3 easyleap-font-semibold"
                                 style={{
                                     backgroundColor: cd.rowHoverBackground,
                                     color: cd.rowTextColor,

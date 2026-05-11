@@ -60,11 +60,14 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({ className }) => {
                   // );
                 }}
                 className={cn(
-                  "easyleap-font-firaCode easyleap-border-[1.5px] easyleap-border-[#DBDBDB]/60",
+                  "easyleap-border-[1.5px] easyleap-border-[#DBDBDB]/60",
                   className,
                   isMobile ? "easyleap-w-16" : "easyleap-w-28"
                 )}
                 style={{
+                  ...(theme.connectDialog?.fontFamily
+                    ? { fontFamily: theme.connectDialog.fontFamily }
+                    : {}),
                   border:
                     mode === InteractionMode.Starknet
                       ? theme?.starknetMode?.switchButton?.border
