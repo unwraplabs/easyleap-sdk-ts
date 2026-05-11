@@ -220,6 +220,8 @@ export const PrivyContextProvider: React.FC<{
         await logout();
       } catch {
         // Logout may fail if session is already invalid; clear storage manually
+        // TODO: very rare occurence but can do it later on
+        // Can add backoff based logout. or clearning manually
       }
 
       setIsLoadingWallet(false);
