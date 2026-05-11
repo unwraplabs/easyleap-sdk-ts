@@ -56,46 +56,48 @@ export const PrivyContextProvider: React.FC<{
   const setupInProgressRef = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
 
-  async function createWallet(token: string) {
+  async function createWallet(token: string): Promise<PrivyWalletData> {
     logger.verbose("[PrivyContext] Creating wallet...");
     setWalletSetupStep("creating");
 
-    try {
-      const response = await fetch(`/api/wallet/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const response = await fetch(`/api/wallet/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error("Failed to create wallet");
-      }
-
-      const data = await response.json();
-      logger.verbose("[PrivyContext] Wallet created", {
-        walletId: data.wallet.walletId,
-      });
-
-      // Update state with created wallet
-      const newWallet: PrivyWalletData = {
-        walletId: data.wallet.walletId,
-        address: data.wallet.address,
-        publicKey: data.wallet.publicKey,
-      };
-      setPrivyWallet(newWallet);
-
-      return data.wallet;
-    } catch (error: unknown) {
-      console.error("Unable to set up wallet", error);
+    if (!response.ok) {
+      throw new Error("Failed to create wallet");
     }
+
+    const data = await response.json();
+
+    if (!data.wallet) {
+      throw new Error("Wallet creation returned empty result");
+    }
+
+    logger.verbose("[PrivyContext] Wallet created", {
+      walletId: data.wallet.walletId,
+    });
+
+    const newWallet: PrivyWalletData = {
+      walletId: data.wallet.walletId,
+      address: data.wallet.address,
+      publicKey: data.wallet.publicKey,
+    };
+    setPrivyWallet(newWallet);
+
+    return newWallet;
   }
 
   // Setup wallet function
   const setupWallet = async (userJwt: string) => {
     if (setupInProgressRef.current) {
-      logger.verbose("[PrivyContext] Wallet setup already in progress, skipping");
+      logger.verbose(
+        "[PrivyContext] Wallet setup already in progress, skipping",
+      );
       return;
     }
 
@@ -123,12 +125,18 @@ export const PrivyContextProvider: React.FC<{
       wallet = data.wallet;
 
       if (!wallet) {
-        logger.verbose("[PrivyContext] No wallet found, creating new wallet...");
+        logger.verbose(
+          "[PrivyContext] No wallet found, creating new wallet...",
+        );
         wallet = await createWallet(userJwt);
       } else {
         logger.verbose("[PrivyContext] Wallet found in database", {
           walletId: wallet.walletId,
         });
+      }
+
+      if (!wallet) {
+        throw new Error("Wallet unavailable after fetch/create");
       }
 
       setPrivyWallet(wallet);
@@ -205,6 +213,17 @@ export const PrivyContextProvider: React.FC<{
       setWalletSetupStep("idle");
       setPrivyWallet(null);
       setStarkzapWallet(null);
+      lastUserIdRef.current = null;
+
+      //   Clear Privy session so the user can re-login
+      try {
+        await logout();
+      } catch {
+        // Logout may fail if session is already invalid; clear storage manually
+      }
+
+      setIsLoadingWallet(false);
+      setupInProgressRef.current = false;
     } finally {
       setIsLoadingWallet(false);
       setupInProgressRef.current = false;
