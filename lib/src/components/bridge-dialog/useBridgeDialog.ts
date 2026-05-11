@@ -15,11 +15,13 @@ import {
   Protocol,
 } from "starkzap";
 
+import { useAnalytics } from "@lib/contexts/AnalyticsContext";
 import { useBridgeStarkzapContext } from "@lib/contexts/BridgeStarkzapContext";
 import { useTheme } from "@lib/contexts/ThemeContext";
 import { useAccount } from "@lib/hooks/useAccount";
 import { toast } from "@lib/hooks/use-toast";
 import { DepositInfo, DepositProgress, LSTAssetConfig } from "@lib/types";
+import { BridgeEvents } from "@lib/utils/analytics";
 
 // We could keep this file in @lib/hooks folder but keeping it here for now since it is bridge-dialog specific
 interface UseBridgeDialogOptions {
@@ -105,6 +107,7 @@ export function useBridgeDialog({
 
   const { starkzapBridgeWallet, starkzapBridgeSDK } =
     useBridgeStarkzapContext();
+  const { track } = useAnalytics();
   const theme = useTheme();
   const cd = theme?.connectDialog;
 
@@ -125,6 +128,21 @@ export function useBridgeDialog({
       ),
     [evmConnectors],
   );
+
+  const walletsTrackedRef = useRef(false);
+  useEffect(() => {
+    if (evmAddress && starknetAddress && !walletsTrackedRef.current) {
+      walletsTrackedRef.current = true;
+      track(BridgeEvents.WALLETS_CONNECTED, {
+        evmAddress,
+        evmWallet: evmConnector?.name,
+        starknetAddress: starknetAddress.toString(),
+      });
+    }
+    if (!evmAddress || !starknetAddress) {
+      walletsTrackedRef.current = false;
+    }
+  }, [evmAddress, starknetAddress, evmConnector, track]);
 
   const fetchDepositInfo = React.useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
@@ -195,7 +213,14 @@ export function useBridgeDialog({
 
     const raw = (balanceNum * percentage) / 100;
     const clamped = Number(raw.toFixed(8));
-    setAmount(Number.isFinite(clamped) ? clamped.toString() : "0");
+    const value = Number.isFinite(clamped) ? clamped.toString() : "0";
+    setAmount(value);
+
+    track(BridgeEvents.AMOUNT_ENTERED, {
+      asset: selectedAsset.SYMBOL,
+      amount: value,
+      percentage,
+    });
   };
 
   const amountUsd = React.useMemo(() => {
@@ -262,7 +287,7 @@ export function useBridgeDialog({
 
   const monitorDepositProgress = React.useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridge token type comes from SDK
-    async (externalTxHash: string, token: any) => {
+    async (externalTxHash: string, token: any, trackingCtx: { asset: string; amount: string; evmAddress?: string; evmWallet?: string; starknetAddress?: string }) => {
       if (!starkzapBridgeWallet) return;
 
       // Clear any existing interval before starting a new one
@@ -273,6 +298,8 @@ export function useBridgeDialog({
       }
 
       try {
+        let lastTrackedStatus: string | null = null;
+
         pollIntervalRef.current = setInterval(async () => {
           try {
             console.log("monitoring deposit progress.....");
@@ -292,6 +319,18 @@ export function useBridgeDialog({
               depositState: state,
             });
 
+            if (result.status !== lastTrackedStatus) {
+              lastTrackedStatus = result.status;
+              track(BridgeEvents.STATE_CHANGE, {
+                asset: trackingCtx.asset,
+                amount: trackingCtx.amount,
+                externalTxHash,
+                status: result.status,
+                depositState: state,
+                starknetTxHash: result.starknetTxHash,
+              });
+            }
+
             if (
               state === DepositState.COMPLETED ||
               state === DepositState.ERROR
@@ -301,7 +340,20 @@ export function useBridgeDialog({
                 pollIntervalRef.current = null;
               }
               if (state === DepositState.COMPLETED) {
+                track(BridgeEvents.COMPLETED, {
+                  asset: trackingCtx.asset,
+                  amount: trackingCtx.amount,
+                  externalTxHash,
+                  starknetTxHash: result.starknetTxHash,
+                });
                 toast({ description: "Bridge completed successfully!" });
+              } else {
+                track(BridgeEvents.FAILED, {
+                  asset: trackingCtx.asset,
+                  amount: trackingCtx.amount,
+                  externalTxHash,
+                  error: "Deposit reached ERROR state",
+                });
               }
             }
           } catch (error) {
@@ -312,7 +364,7 @@ export function useBridgeDialog({
         console.error("Failed to start monitoring:", error);
       }
     },
-    [starkzapBridgeWallet],
+    [starkzapBridgeWallet, track],
   );
 
   // Create ConnectedEthereumWallet when EVM wallet connects
@@ -470,6 +522,17 @@ export function useBridgeDialog({
 
     setIsBridging(true);
 
+    const trackingCtx = {
+      asset: selectedAsset.SYMBOL,
+      amount,
+      amountUsd: amountUsd ?? undefined,
+      evmAddress,
+      evmWallet: evmConnector?.name,
+      starknetAddress: starknetAddress?.toString(),
+    };
+
+    track(BridgeEvents.INITIATED, trackingCtx);
+
     try {
       if (!selectedToken) {
         throw new Error(
@@ -514,6 +577,12 @@ export function useBridgeDialog({
         evmWalletForBridge,
       );
 
+      track(BridgeEvents.TX_SUBMITTED, {
+        asset: selectedAsset.SYMBOL,
+        amount,
+        externalTxHash: tx.hash,
+      });
+
       toast({ description: "Transaction submitted! Monitoring progress..." });
       onBridgeSuccess?.(tx.hash);
 
@@ -523,10 +592,21 @@ export function useBridgeDialog({
         depositState: DepositState.PENDING,
       });
 
-      monitorDepositProgress(tx.hash, assetToken);
+      monitorDepositProgress(tx.hash, assetToken, {
+        asset: selectedAsset.SYMBOL,
+        amount,
+        evmAddress,
+        evmWallet: evmConnector?.name,
+        starknetAddress: starknetAddress?.toString(),
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Bridge error:", error);
+      track(BridgeEvents.FAILED, {
+        asset: selectedAsset.SYMBOL,
+        amount,
+        error: error?.message || "Unknown error",
+      });
       toast({
         description: error.message || "Bridge transaction failed",
         variant: "destructive",

@@ -24,7 +24,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@lib/components/ui/tooltip";
+import { useAnalytics } from "@lib/contexts/AnalyticsContext";
 import { BridgeDialogProps } from "@lib/types";
+import { BridgeEvents } from "@lib/utils/analytics";
 import { getAssetIcon, getWalletIcon, walletLabel } from "@lib/utils/bridge-utils";
 import { DEFAULT_LST_CONFIGS, PERCENTAGE_BUTTONS } from "@lib/utils/constants";
 import { cn, shortAddress } from "@lib/utils";
@@ -70,6 +72,7 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
   className = "",
   lstConfig = DEFAULT_LST_CONFIGS,
 }) => {
+  const { track } = useAnalytics();
   const theme = useTheme();
   const bd = theme.bridgeDialog!;
 
@@ -108,12 +111,14 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
     depositProgress.depositState !== DepositState.COMPLETED &&
     depositProgress.depositState !== DepositState.ERROR;
 
-  // Reset to options view when dialog opens
   React.useEffect(() => {
     if (open) {
+      track(BridgeEvents.BUTTON_CLICKED, {
+        starknetAddress: starknetAddress?.toString(),
+      });
       setShowOptionsView(true);
     }
-  }, [open]);
+  }, [open, track, starknetAddress]);
 
   const handleStarkgateSelect = () => {
     setShowOptionsView(false);
@@ -388,6 +393,10 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
                           <DropdownMenuItem
                             key={asset.SYMBOL}
                             onClick={() => {
+                              track(BridgeEvents.ASSET_SELECTED, {
+                                asset: asset.SYMBOL,
+                                context: "bridge_form",
+                              });
                               setSelectedAsset(asset);
                               setIsAssetSelectorOpen(false);
                               setAmount("");
