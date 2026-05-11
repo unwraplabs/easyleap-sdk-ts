@@ -218,7 +218,8 @@ export const PrivyContextProvider: React.FC<{
       //   Clear Privy session so the user can re-login
       try {
         await logout();
-      } catch {
+      } catch (error: any) {
+        logger.error("[PrivyContext] logout failed.. check asap ", error);
         // Logout may fail if session is already invalid; clear storage manually
         // TODO: very rare occurence but can do it later on
         // Can add backoff based logout. or clearning manually
