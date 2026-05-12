@@ -146,7 +146,7 @@ const WalletConnectPanel: React.FC<{
         enableEvmMode && (chainFilter === "all" || chainFilter === "ethereum");
 
     const walletLabel = (name: string) =>
-        name.toLowerCase().includes("wallet") ? name : `${name} wallet`;
+        name.toLowerCase().includes("wallet") ? name : `${name} Wallet`;
 
     const panelRowBase: React.CSSProperties = {
         border: cd.rowBorder,
@@ -263,8 +263,8 @@ const WalletConnectPanel: React.FC<{
                             >
                                 <span
                                     className={cn(
-                                        "easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-bg-transparent",
-                                        "easyleap-p-1"
+                                        "easyleap-flex easyleap-items-center easyleap-justify-center  easyleap-rounded-full easyleap-border easyleap-w-12 easyleap-h-12 easyleap-border-[#DBDBDB] easyleap-bg-transparent",
+                                        "easyleap-p-1",
                                     )}
                                 >
                                     {isLoadingWallet ? (
