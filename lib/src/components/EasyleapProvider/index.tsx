@@ -241,6 +241,22 @@ export function EasyleapProvider(
         );
     }, [props.starkzap?.bridgePrivateKey]);
 
+    const mixpanelToken = React.useMemo(() => {
+        const fromProps =
+            typeof props.mixpanelToken === "string"
+                ? props.mixpanelToken.trim()
+                : null;
+        if (fromProps) return fromProps;
+
+        const fromEnv =
+            readEnv("NEXT_PUBLIC_MIXPANEL_TOKEN") ??
+            readEnv("VITE_MIXPANEL_TOKEN");
+        if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+
+        // Mixpanel is optional, so return undefined if not provided
+        return undefined;
+    }, [props.mixpanelToken]);
+
     return (
         <SharedStateProvider ui={props.ui}>
             <ThemeProvider theme={props.theme}>
@@ -273,7 +289,7 @@ export function EasyleapProvider(
                                             starknetConfig?.connectors || []
                                         }
                                     >
-                                        <AnalyticsProvider token={props.mixpanelToken}>
+                                        <AnalyticsProvider token={mixpanelToken}>
                                             {props.children}
                                             <Toaster />
                                         </AnalyticsProvider>
