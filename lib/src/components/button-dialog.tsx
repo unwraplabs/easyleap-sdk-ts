@@ -38,6 +38,13 @@ const PRIORITY_WALLET_IDS = ["argentX", "argentMobile", "braavos", "braavosMobil
 // Social login wallets (Cartridge)
 const SOCIAL_LOGIN_WALLET_IDS = ["cartridge", "controller", "cartridge controller"];
 
+// Validate Starknet address to prevent BigInt crash from empty "0x" addresses (Braavos mobile redirect bug)
+function isValidStarknetAddress(account: string | undefined): boolean {
+    if (typeof account !== "string" || account.length <= 2) return false;
+    if (!account.startsWith("0x")) return false;
+    return (/^0x[0-9a-fA-F]+$/).test(account);
+}
+
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
     chainFilter: ChainFilter;
@@ -174,7 +181,7 @@ const WalletConnectPanel: React.FC<{
             className="easyleap-flex easyleap-w-full easyleap-items-center !easyleap-font-medium easyleap-gap-5 easyleap-text-sm md:easyleap-text-[16px] easyleap-px-[15px] easyleap-py-[8px] my-button"
             style={panelRowBase}
         >
-            <span className="easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1">
+            <span className="easyleap-flex easyleap-items-center easyleap-justify-center easyleap-w-12 easyleap-h-12 easyleap-rounded-full easyleap-border easyleap-border-[#DBDBDB] easyleap-p-1 easyleap-flex-shrink-0">
                 {icon}
             </span>
             {label}
@@ -204,6 +211,13 @@ const WalletConnectPanel: React.FC<{
                                             await disconnectPrivy();
                                         }
                                             try {
+                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
+                                                const data = await connector.connect({});
+                                                if (!isValidStarknetAddress(data?.account)) {
+                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
+                                                    return;
+                                                }
+                                                
                                                 if (connectSNAsync) {
                                                     await connectSNAsync({
                                                         connector
@@ -254,9 +268,9 @@ const WalletConnectPanel: React.FC<{
                                     )}
                                 >
                                     {isLoadingWallet ? (
-                                        <Loader2 className="easyleap-size-8 easyleap-p-1 easyleap-animate-spin" />
+                                        <Loader2 className="easyleap-size-7 easyleap-p-1 easyleap-animate-spin" />
                                     ) : (
-                                        <MailIcon className="easyleap-size-8 easyleap-p-1" />
+                                        <MailIcon className="easyleap-size-7 easyleap-p-1" />
                                     )}
                                 </span>
                                 {isLoadingWallet
@@ -275,6 +289,13 @@ const WalletConnectPanel: React.FC<{
                                             await disconnectPrivy();
                                         }
                                             try {
+                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
+                                                const data = await connector.connect({});
+                                                if (!isValidStarknetAddress(data?.account)) {
+                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
+                                                    return;
+                                                }
+                                                
                                                 if (connectSNAsync) {
                                                     await connectSNAsync({
                                                         connector
@@ -331,6 +352,13 @@ const WalletConnectPanel: React.FC<{
                                                             await disconnectPrivy();
                                                         }
                                                             try {
+                                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
+                                                                const data = await connector.connect({});
+                                                                if (!isValidStarknetAddress(data?.account)) {
+                                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
+                                                                    return;
+                                                                }
+                                                                
                                                                 if (connectSNAsync) {
                                                                     await connectSNAsync({
                                                                         connector
@@ -383,16 +411,7 @@ const WalletConnectPanel: React.FC<{
 
                             <Button className="easyleap-flex easyleap-w-[98.2%] easyleap-items-center easyleap-font-semibold easyleap-w-full easyleap-justify-between [&_svg]:easyleap-pointer-events-auto my-active-button">
                                 <div className="easyleap-flex easyleap-items-center easyleap-justify-start easyleap-gap-3">
-                                    <span
-                                        className={cn(
-                                            "easyleap-rounded-full easyleap-p-1",
-                                            {
-                                                "easyleap-p-0":
-                                                    starknetConnectorId ===
-                                                        "argentX" && !user
-                                            }
-                                        )}
-                                    >
+                                    <span className="easyleap-rounded-full easyleap-p-1">
                                         {isPrivyConnected ? (
                                             <MailIcon className="easyleap-size-5" />
                                         ) : (
@@ -576,39 +595,39 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         string,
         { Icon: React.ElementType; size?: string }
     > = {
-        braavos: { Icon: Icons.braavos, size: "easyleap-size-5" },
-        braavosmobile: { Icon: Icons.braavos, size: "easyleap-size-5" },
-        argentx: { Icon: Icons.argentX, size: "easyleap-size-15" },
-        argentwebwallet: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        keplr: { Icon: Icons.keplr, size: "easyleap-size-5" },
-        argentmobile: { Icon: Icons.argentMobile, size: "easyleap-size-5" },
-        metamask: { Icon: Icons.metamask, size: "easyleap-size-5" },
-        "coinbase wallet": { Icon: Icons.coinbase, size: "easyleap-size-5" },
-        subwallet: { Icon: Icons.subwallet, size: "easyleap-size-5" },
-        trust: { Icon: Icons.trust, size: "easyleap-size-5" },
-        rainbow: { Icon: Icons.rainbow, size: "easyleap-size-5" },
-        phantom: { Icon: Icons.phantom, size: "easyleap-size-5" },
-        walletconnect: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        fordefi: { Icon: Icons.fordefi, size: "easyleap-size-5" },
-        okxwallet: { Icon: Icons.okxwallet, size: "easyleap-size-5" },
+        braavos: { Icon: Icons.braavos, size: "easyleap-size-8" },
+        braavosmobile: { Icon: Icons.braavos, size: "easyleap-size-7" },
+        argentx: { Icon: Icons.argentX, size: "easyleap-size-9" },
+        argentwebwallet: { Icon: Icons.wallet, size: "easyleap-size-7" },
+        keplr: { Icon: Icons.keplr, size: "easyleap-size-8" },
+        argentmobile: { Icon: Icons.argentMobile, size: "easyleap-size-8" },
+        metamask: { Icon: Icons.metamask, size: "easyleap-size-8" },
+        "coinbase wallet": { Icon: Icons.coinbase, size: "easyleap-size-7" },
+        subwallet: { Icon: Icons.subwallet, size: "easyleap-size-7" },
+        trust: { Icon: Icons.trust, size: "easyleap-size-8" },
+        rainbow: { Icon: Icons.rainbow, size: "easyleap-size-7" },
+        phantom: { Icon: Icons.phantom, size: "easyleap-size-7" },
+        walletconnect: { Icon: Icons.wallet, size: "easyleap-size-7" },
+        fordefi: { Icon: Icons.fordefi, size: "easyleap-size-6" },
+        okxwallet: { Icon: Icons.okxwallet, size: "easyleap-size-7" },
         xverse: { Icon: Icons.xverse, size: "easyleap-size-5" },
         // Cartridge Controller connector IDs vary by implementation; cover common cases.
-        cartridge: { Icon: Icons.cartridge, size: "easyleap-size-5" },
-        controller: { Icon: Icons.cartridge, size: "easyleap-size-5" },
-        "cartridge controller": { Icon: Icons.cartridge, size: "easyleap-size-5" },
-        starknet: { Icon: Icons.wallet, size: "easyleap-size-5" },
-        "argent web wallet": { Icon: Icons.wallet, size: "easyleap-size-5" }
+        cartridge: { Icon: Icons.cartridge, size: "easyleap-size-7" },
+        controller: { Icon: Icons.cartridge, size: "easyleap-size-7" },
+        "cartridge controller": { Icon: Icons.cartridge, size: "easyleap-size-7" },
+        starknet: { Icon: Icons.wallet, size: "easyleap-size-7" },
+        "argent web wallet": { Icon: Icons.wallet, size: "easyleap-size-7" }
     };
 
     const getWalletIcon = (walletId: string) => {
         const key = walletId.toLowerCase();
         const wallet = walletIconMap[key];
+        const padding = key === "argentx" ? "easyleap-p-0.5" : "easyleap-p-1";
 
         return wallet ? (
             <wallet.Icon
                 key={walletId}
-                // This will ensure consistent sizing
-                className={"easyleap-size-7 easyleap-p-1"}
+                className={cn(wallet.size || "easyleap-size-7", padding)}
             />
         ) : (
             <Icons.wallet className="easyleap-size-7 easyleap-p-1" />
