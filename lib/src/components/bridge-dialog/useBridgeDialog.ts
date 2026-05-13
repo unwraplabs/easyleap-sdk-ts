@@ -321,14 +321,41 @@ export function useBridgeDialog({
 
             if (result.status !== lastTrackedStatus) {
               lastTrackedStatus = result.status;
-              track(BridgeEvents.STATE_CHANGE, {
+              
+              // Track specific event based on bridge status
+              const basePayload: Record<string, unknown> = {
                 asset: trackingCtx.asset,
                 amount: trackingCtx.amount,
                 externalTxHash,
-                status: result.status,
-                depositState: state,
-                starknetTxHash: result.starknetTxHash,
-              });
+              };
+
+              // Only include starknetTxHash from SUBMITTED_ON_STARKNET onwards
+              const isStarknetPhase = 
+                result.status === BridgeTransferStatus.SUBMITTED_ON_STARKNET ||
+                result.status === BridgeTransferStatus.CONFIRMED_ON_STARKNET ||
+                result.status === BridgeTransferStatus.COMPLETED_ON_STARKNET;
+
+              if (isStarknetPhase && result.starknetTxHash) {
+                basePayload.starknetTxHash = result.starknetTxHash;
+              }
+
+              switch (result.status) {
+                case BridgeTransferStatus.SUBMITTED_ON_L1:
+                  track(BridgeEvents.SUBMITTED_ON_L1, basePayload);
+                  break;
+                case BridgeTransferStatus.CONFIRMED_ON_L1:
+                  track(BridgeEvents.CONFIRMED_ON_L1, basePayload);
+                  break;
+                case BridgeTransferStatus.SUBMITTED_ON_STARKNET:
+                  track(BridgeEvents.SUBMITTED_ON_STARKNET, basePayload);
+                  break;
+                case BridgeTransferStatus.CONFIRMED_ON_STARKNET:
+                  track(BridgeEvents.CONFIRMED_ON_STARKNET, basePayload);
+                  break;
+                case BridgeTransferStatus.COMPLETED_ON_STARKNET:
+                  track(BridgeEvents.COMPLETED_ON_STARKNET, basePayload);
+                  break;
+              }
             }
 
             if (
