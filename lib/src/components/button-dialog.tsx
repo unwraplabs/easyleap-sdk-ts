@@ -20,10 +20,12 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@lib/components/ui/dialog";
+import { useAnalytics } from "@lib/contexts/AnalyticsContext";
 import { InteractionMode, useSharedState } from "@lib/contexts/SharedState";
 import { useTheme } from "@lib/contexts/ThemeContext";
 import { useAccount, evmConfig } from "@lib/hooks/useAccount";
 import { useMode } from "@lib/hooks/useMode";
+import { PrivyEvents } from "@lib/utils/analytics";
 import { cn, shortAddress } from "@lib/utils";
 import { toast } from "@lib/hooks/use-toast";
 
@@ -92,6 +94,7 @@ const WalletConnectPanel: React.FC<{
         useConnectWagmi();
     const { user, privyWallet, connectPrivy, disconnectPrivy, isLoadingWallet } =
         usePrivyContext();
+    const { track } = useAnalytics();
 
     const isPrivyConnected = React.useMemo(() => {
         return !!user || !!privyWallet?.address;
@@ -251,6 +254,7 @@ const WalletConnectPanel: React.FC<{
                             <button
                                 type="button"
                                 onClick={async () => {
+                                    track(PrivyEvents.WALLET_CONNECT_CLICKED);
                                     await connectPrivy();
                                     onConnectStarknet?.();
                                     setTimeout(() => {
