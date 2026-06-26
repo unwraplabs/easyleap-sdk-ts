@@ -2,12 +2,11 @@ import {
   UseBalanceResult,
   useBalance as useBalanceSN,
 } from "@starknet-react/core";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useBalance as useBalanceWagmi } from "wagmi";
 import { InteractionMode } from "../contexts/SharedState";
 import { useAccount } from "./useAccount";
 import { useMode } from "./useMode";
-import { logger } from "@lib/utils/logger";
 
 /**
  * EasyLeap balance hook.
@@ -43,17 +42,19 @@ export function useBalance(tokenAddress: `0x${string}`): UseBalanceResult {
     return evmBalance;
   }, [mode, starknetBalance, evmBalance]);
 
-  useEffect(() => {
-    logger.verbose("useBalance", {
-      result,
-      mode,
-      starknetAddress,
-      evmAddress,
-      error: result.error,
-      tokenAddress,
-      formatted: result?.data?.formatted,
-    });
-  }, [result, mode, starknetAddress, evmAddress, tokenAddress]);
+  // Not much of use in prod -> can use in prod for dev
+  //
+  // useEffect(() => {
+  //   logger.verbose("useBalance", {
+  //     result,
+  //     mode,
+  //     starknetAddress,
+  //     evmAddress,
+  //     error: result.error,
+  //     tokenAddress,
+  //     formatted: result?.data?.formatted,
+  //   });
+  // }, [result, mode, starknetAddress, evmAddress, tokenAddress]);
 
   return result;
 }
