@@ -1,5 +1,7 @@
+import type {STRK20_PROOF} from "starknet";
 import {
   Address,
+  UseSendTransactionVariables,
   useSendTransaction as useSendTransactionSN,
 } from "@starknetfoundation/starknet-start-react";
 import { useCallback, useMemo, useState } from "react";
@@ -23,6 +25,8 @@ export interface EvmTxParams {
 
 export interface SendTransactionParams {
   calls?: Call[];
+  /** Optional STRK20 proof from `useStrk20PrepareInvoke` for private transactions. */
+  proof?: STRK20_PROOF;
   evmTxParams?: EvmTxParams;
 }
 
@@ -59,9 +63,18 @@ function normalizeCalls(input: any): Call[] {
     .filter(Boolean) as Call[];
 }
 
+function toSnSendArgs(
+  calls: Call[],
+  proof?: STRK20_PROOF,
+): UseSendTransactionVariables {
+  return proof ? { calls, proof } : calls;
+}
+
 function getSendTransactionCallback(
   mode: InteractionMode,
-  snSendAsync: (args?: Call[]) => Promise<unknown>,
+  snSendAsync: (
+    args?: UseSendTransactionVariables,
+  ) => Promise<unknown>,
   evmSendAsync: (params: {
     to: `0x${string}`;
     value?: bigint;
@@ -105,9 +118,14 @@ function getSendTransactionCallback(
       }
       try {
         if (isPrivyWallet) {
+          if (params.proof) {
+            throw new Error(
+              "STRK20 proofs are not supported with the Privy wallet",
+            );
+          }
           await privySendTransaction(params.calls);
         } else {
-          await snSendAsync(params.calls);
+          await snSendAsync(toSnSendArgs(params.calls, params.proof));
         }
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-sn-error", e);
@@ -131,6 +149,9 @@ function getSendTransactionCallback(
  *
  * // Starknet mode
  * send({ calls: [{ contractAddress: '0x...', entrypoint: 'transfer', calldata: [...] }] });
+ *
+ * // Starknet private (STRK20) mode — pass proof from useStrk20PrepareInvoke
+ * send({ calls: [preparedCall], proof });
  *
  * // EVM mode
  * send({ evmTxParams: { to: '0x...', value: 1000n, data: '0x...' } });
