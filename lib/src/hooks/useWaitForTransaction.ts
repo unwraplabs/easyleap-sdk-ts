@@ -1,6 +1,9 @@
-import { Address, UseTransactionReceiptResult } from "@starknet-react/core"
-import { useTransactionReceipt as useTransactionReceiptEVM } from "wagmi"
-import { useTransactionReceipt as useTransactionReceiptSN } from "@starknet-react/core";
+import {
+  Address,
+  UseTransactionReceiptResult,
+  useTransactionReceipt as useTransactionReceiptSN,
+} from "@starknetfoundation/starknet-start-react";
+import { useTransactionReceipt as useTransactionReceiptEVM } from "wagmi";
 import { useMemo } from "react";
 import { useMode } from "./useMode";
 import { InteractionMode } from "@lib/contexts";

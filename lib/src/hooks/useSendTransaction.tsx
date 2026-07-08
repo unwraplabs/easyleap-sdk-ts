@@ -1,7 +1,7 @@
 import {
   Address,
   useSendTransaction as useSendTransactionSN,
-} from "@starknet-react/core";
+} from "@starknetfoundation/starknet-start-react";
 import { useCallback, useMemo, useState } from "react";
 import { Call } from "starknet";
 import {

@@ -1,12 +1,12 @@
 import {
+  starknetChainId,
   useAccount as useAccountSn,
   useNetwork,
   useSwitchChain,
-} from "@starknet-react/core";
+} from "@starknetfoundation/starknet-start-react";
 import { createConfig, http, switchChain as switchChainEVM } from "@wagmi/core";
 import { mainnet, sepolia } from "@wagmi/core/chains";
 import { useEffect } from "react";
-import { num } from "starknet";
 import { useAccount as useAccountWagmi, useConfig } from "wagmi";
 import { InteractionMode, useSharedState } from "../contexts/SharedState";
 import { usePrivyContext } from "../contexts/PrivyContext";
@@ -60,7 +60,7 @@ export function useAccount(): useAccountResult {
 
   const result = useSwitchChain({
     params: {
-      chainId: num.getHexString(chain.id.toString()),
+      chainId: starknetChainId(chain.id)!,
     },
   });
 

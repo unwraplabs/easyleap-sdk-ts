@@ -1,7 +1,7 @@
 import {
   UseBalanceResult,
   useBalance as useBalanceSN,
-} from "@starknet-react/core";
+} from "@starknetfoundation/starknet-start-react";
 import { useMemo } from "react";
 import { useBalance as useBalanceWagmi } from "wagmi";
 import { InteractionMode } from "../contexts/SharedState";

@@ -1,4 +1,4 @@
-import { Address } from "@starknet-react/chains";
+import { Address } from "@starknetfoundation/starknet-start-chains";
 
 export interface SupportedToken {
     l1_token_address: Address;
