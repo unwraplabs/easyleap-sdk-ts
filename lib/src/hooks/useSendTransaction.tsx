@@ -1,8 +1,9 @@
-import type {STRK20_PROOF} from "starknet";
+import type {STRK20_PROOF, STRK20_ACTION} from "starknet";
 import {
   Address,
   UseSendTransactionVariables,
   useSendTransaction as useSendTransactionSN,
+  useStrk20InvokeTransaction,
 } from "@starknetfoundation/starknet-start-react";
 import { useCallback, useMemo, useState } from "react";
 import { Call } from "starknet";
@@ -33,6 +34,8 @@ export interface SendTransactionParams {
 export interface UseSendTransactionResult_EasyLeap {
   send: (params: SendTransactionParams) => void;
   sendAsync: (params: SendTransactionParams) => Promise<void>;
+  /** Submit STRK20 privacy actions directly via `wallet_strk20InvokeTransaction`. */
+  invokeAsync: (actions: STRK20_ACTION[]) => Promise<void>;
   isPaused: boolean;
   isSuccess: boolean;
   isError: boolean;
@@ -257,6 +260,35 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   // Initialize the EVM transaction hook.
   const evmOutput = useSendTransactionEVM();
 
+  // Initialize the STRK20 invoke hook (actions are passed at call time).
+  const strk20InvokeOutput = useStrk20InvokeTransaction({});
+
+  // Callback for STRK20 privacy transactions — actions passed at call time.
+  const invokeAsync = useCallback(
+    async (actions: STRK20_ACTION[]): Promise<void> => {
+      logger.verbose("EL::useSendTransaction::invokeAsync", { mode });
+
+      if (mode === InteractionMode.EVM) {
+        throw new Error("STRK20 invoke is not available in EVM mode");
+      }
+
+      if (isPrivyWallet) {
+        throw new Error(
+          "STRK20 privacy transactions are not supported with the Privy wallet",
+        );
+      }
+
+      try {
+        await strk20InvokeOutput.invokeAsync(actions);
+      } catch (e) {
+        logger.verbose("EL::useSendTransaction::invokeAsync-error", e);
+        console.error("EL::useSendTransaction::invokeAsync-error", e);
+        throw e;
+      }
+    },
+    [mode, isPrivyWallet, strk20InvokeOutput.invokeAsync],
+  );
+
   // Create the callback function for sending transactions.
   const sendCallback = useCallback(
     getSendTransactionCallback(
@@ -304,6 +336,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   return {
     send: sendCallback,
     sendAsync: sendCallback,
+    invokeAsync,
     isPaused: isEVMMode ? (evmOutput.isPaused ?? false) : (snOutput.isPaused ?? false),
     isSuccess: activeIsSuccess,
     isError: activeIsError,
