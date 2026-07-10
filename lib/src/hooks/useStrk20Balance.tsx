@@ -5,6 +5,7 @@ import {
 import { formatUnits } from "ethers";
 import { useMemo } from "react";
 import { InteractionMode } from "../contexts/SharedState";
+import { standariseAddress } from "../utils";
 import { useMode } from "./useMode";
 
 export type Strk20Balance = {
@@ -45,17 +46,21 @@ export function useStrk20Balance(
   const mode = useMode();
   const { decimals, ...strk20Options } = options;
   const isEnabled = mode !== InteractionMode.EVM;
+  const normalizedTokenAddress = standariseAddress(
+    tokenAddress,
+  ) as `0x${string}`;
 
   const strk20Balances = useStrk20BalancesSN({
     ...strk20Options,
-    tokens: isEnabled ? [tokenAddress] : [],
+    tokens: isEnabled ? [normalizedTokenAddress] : [],
   });
 
   const data = useMemo(() => {
     if (!isEnabled || !strk20Balances.data) return undefined;
 
     const entry = strk20Balances.data.find(
-      (balance) => balance.token.toLowerCase() === tokenAddress.toLowerCase(),
+      (balance) =>
+        standariseAddress(balance.token) === normalizedTokenAddress,
     );
 
     if (!entry) return undefined;
@@ -63,18 +68,18 @@ export function useStrk20Balance(
     const value = BigInt(entry.balance);
 
     return {
-      token: tokenAddress,
+      token: normalizedTokenAddress,
       balance: entry.balance,
       value,
       ...(decimals !== undefined
         ? { formatted: formatUnits(value, decimals) }
         : {}),
     };
-  }, [decimals, isEnabled, strk20Balances.data, tokenAddress]);
+  }, [decimals, isEnabled, normalizedTokenAddress, strk20Balances.data]);
 
   const getBalance = () => {
     if (!isEnabled) return;
-    strk20Balances.getBalances([tokenAddress]);
+    strk20Balances.getBalances([normalizedTokenAddress]);
   };
 
   const getBalanceAsync = () => {
@@ -84,7 +89,7 @@ export function useStrk20Balance(
       );
     }
 
-    return strk20Balances.getBalancesAsync([tokenAddress]);
+    return strk20Balances.getBalancesAsync([normalizedTokenAddress]);
   };
 
   return {
