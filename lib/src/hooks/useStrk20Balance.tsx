@@ -3,9 +3,10 @@ import {
   useStrk20Balances as useStrk20BalancesSN,
 } from "@starknetfoundation/starknet-start-react";
 import { formatUnits } from "ethers";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { InteractionMode } from "../contexts/SharedState";
 import { standariseAddress } from "../utils";
+import { useAccount } from "./useAccount";
 import { useMode } from "./useMode";
 
 export type Strk20Balance = {
@@ -44,6 +45,7 @@ export function useStrk20Balance(
   options: UseStrk20BalanceOptions = {},
 ): UseStrk20BalanceResult {
   const mode = useMode();
+  const { starknetAddress } = useAccount();
   const { decimals, ...strk20Options } = options;
   const isEnabled = mode !== InteractionMode.EVM;
   const normalizedTokenAddress = standariseAddress(
@@ -54,6 +56,12 @@ export function useStrk20Balance(
     ...strk20Options,
     tokens: isEnabled ? [normalizedTokenAddress] : [],
   });
+
+  // Clear cached shielded balances when the wallet or token changes.
+  useEffect(() => {
+    strk20Balances.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only on wallet/token change
+  }, [starknetAddress, normalizedTokenAddress]);
 
   const data = useMemo(() => {
     if (!isEnabled || !strk20Balances.data) return undefined;
