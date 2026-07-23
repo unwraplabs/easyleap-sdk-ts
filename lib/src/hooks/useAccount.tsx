@@ -22,6 +22,7 @@ export interface useAccountResult {
   starknetAddress: `0x${string}` | undefined;
   chainIdEVM: number | undefined;
   chainIdSN: bigint | undefined;
+  connector: ReturnType<typeof useAccountSn>["connector"];
 }
 
 export const evmConfig = createConfig({
@@ -41,7 +42,11 @@ export const evmConfig = createConfig({
 export function useAccount(): useAccountResult {
   const config = useConfig();
   const { address: evmAddress, chainId: chainIdEVM } = useAccountWagmi();
-  const { address: starknetAddressSN, chainId: chainIdSN } = useAccountSn();
+  const {
+    address: starknetAddressSN,
+    chainId: chainIdSN,
+    connector: starknetConnector,
+  } = useAccountSn();
   const { chain } = useNetwork();
   const { privyWallet } = usePrivyContext();
   const sharedState = useSharedState();
@@ -121,5 +126,6 @@ export function useAccount(): useAccountResult {
     starknetAddress,
     chainIdEVM,
     chainIdSN,
+    connector: starknetConnector,
   };
 }
