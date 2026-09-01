@@ -31,6 +31,7 @@ import { toast } from "@lib/hooks/use-toast";
 
 import { ModeSwitcher, type ConnectButtonProps } from ".";
 import { usePrivyContext } from "@lib/contexts/PrivyContext";
+import { announceLateInjectedWallets } from "@lib/utils/late-wallet-discovery";
 
 type ChainFilter = "all" | "starknet" | "ethereum";
 
@@ -716,6 +717,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
             <Dialog
                 open={sharedState.connectWalletModalOpen}
                 onOpenChange={(open) => {
+                    // This is a fix for injecting Ready Wallet on Android that would have been otherwise to late to be injected
+                    if (open) announceLateInjectedWallets();
                     sharedState.setConnectWalletModalOpen(open);
                     if (!open) setChainFilter("all");
                 }}

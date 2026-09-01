@@ -3,7 +3,7 @@ import { fn } from "@storybook/test";
 
 import { BridgeButton } from "./index";
 
-const meta = {
+const meta: Meta<typeof BridgeButton> = {
   title: "Components/BridgeButton",
   component: BridgeButton,
   parameters: {
@@ -19,7 +19,7 @@ const meta = {
     onBridgeError: fn(),
   },
   decorators: [(Story) => <Story />],
-} satisfies Meta<typeof BridgeButton>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
