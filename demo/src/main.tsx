@@ -1,7 +1,6 @@
-import { InjectedConnector, jsonRpcProvider } from "@starknet-react/core";
+import { jsonRpcProvider } from "@starknetfoundation/starknet-start-providers";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { WebWalletConnector } from "starknetkit/webwallet";
 
 import { Toaster } from "@/components/ui/toaster.tsx";
 
@@ -28,14 +27,6 @@ createRoot(document.getElementById("root")!).render(
         chains: defaultEasyleapConfig().starknetConfig.chains,
         provider,
         explorer: defaultEasyleapConfig().starknetConfig.explorer,
-        connectors: [
-          new WebWalletConnector(),
-          new InjectedConnector({ options: { id: "argentX" } }),
-          new InjectedConnector({ options: { id: "braavos" } }),
-          new InjectedConnector({
-            options: { id: "metamask", name: "MetaMask" }
-          }),
-        ],
       }}
     >
       <App />

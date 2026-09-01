@@ -1,4 +1,4 @@
-import { UseReadContractResult } from "@starknet-react/core";
+import { UseReadContractResult } from "@starknetfoundation/starknet-start-react";
 import { useMemo } from "react";
 
 // BRIDGE MODE - mode check no longer needed since fee logic is disabled

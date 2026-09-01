@@ -5,7 +5,7 @@
 // import { useMemo } from "react";
 // import { standardise } from "@lib/utils";
 // import { ZERO_ADDRESS_EVM } from "@lib/utils/constants";
-import { Address } from "@starknet-react/chains";
+import { Address } from "@starknetfoundation/starknet-start-chains";
 // import { useSupportedTokens } from "./useSupportedTokens";
 
 export interface useSourceBridgeInfoProps {

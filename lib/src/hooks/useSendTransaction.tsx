@@ -1,7 +1,10 @@
+import type {STRK20_PROOF, STRK20_ACTION} from "starknet";
 import {
   Address,
+  UseSendTransactionVariables,
   useSendTransaction as useSendTransactionSN,
-} from "@starknet-react/core";
+  useStrk20InvokeTransaction,
+} from "@starknetfoundation/starknet-start-react";
 import { useCallback, useMemo, useState } from "react";
 import { Call } from "starknet";
 import {
@@ -23,12 +26,16 @@ export interface EvmTxParams {
 
 export interface SendTransactionParams {
   calls?: Call[];
+  /** Optional STRK20 proof from `useStrk20PrepareInvoke` for private transactions. */
+  proof?: STRK20_PROOF;
   evmTxParams?: EvmTxParams;
 }
 
 export interface UseSendTransactionResult_EasyLeap {
   send: (params: SendTransactionParams) => void;
   sendAsync: (params: SendTransactionParams) => Promise<void>;
+  /** Submit STRK20 privacy actions directly via `wallet_strk20InvokeTransaction`. */
+  invokeAsync: (actions: STRK20_ACTION[]) => Promise<void>;
   isPaused: boolean;
   isSuccess: boolean;
   isError: boolean;
@@ -59,9 +66,18 @@ function normalizeCalls(input: any): Call[] {
     .filter(Boolean) as Call[];
 }
 
+function toSnSendArgs(
+  calls: Call[],
+  proof?: STRK20_PROOF,
+): UseSendTransactionVariables {
+  return proof ? { calls, proof } : calls;
+}
+
 function getSendTransactionCallback(
   mode: InteractionMode,
-  snSendAsync: (args?: Call[]) => Promise<unknown>,
+  snSendAsync: (
+    args?: UseSendTransactionVariables,
+  ) => Promise<unknown>,
   evmSendAsync: (params: {
     to: `0x${string}`;
     value?: bigint;
@@ -105,9 +121,14 @@ function getSendTransactionCallback(
       }
       try {
         if (isPrivyWallet) {
+          if (params.proof) {
+            throw new Error(
+              "STRK20 proofs are not supported with the Privy wallet",
+            );
+          }
           await privySendTransaction(params.calls);
         } else {
-          await snSendAsync(params.calls);
+          await snSendAsync(toSnSendArgs(params.calls, params.proof));
         }
       } catch (e) {
         logger.verbose("EL::useSendTransaction::send-sn-error", e);
@@ -131,6 +152,9 @@ function getSendTransactionCallback(
  *
  * // Starknet mode
  * send({ calls: [{ contractAddress: '0x...', entrypoint: 'transfer', calldata: [...] }] });
+ *
+ * // Starknet private (STRK20) mode — pass proof from useStrk20PrepareInvoke
+ * send({ calls: [preparedCall], proof });
  *
  * // EVM mode
  * send({ evmTxParams: { to: '0x...', value: 1000n, data: '0x...' } });
@@ -236,6 +260,35 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   // Initialize the EVM transaction hook.
   const evmOutput = useSendTransactionEVM();
 
+  // Initialize the STRK20 invoke hook (actions are passed at call time).
+  const strk20InvokeOutput = useStrk20InvokeTransaction({});
+
+  // Callback for STRK20 privacy transactions — actions passed at call time.
+  const invokeAsync = useCallback(
+    async (actions: STRK20_ACTION[]): Promise<void> => {
+      logger.verbose("EL::useSendTransaction::invokeAsync", { mode });
+
+      if (mode === InteractionMode.EVM) {
+        throw new Error("STRK20 invoke is not available in EVM mode");
+      }
+
+      if (isPrivyWallet) {
+        throw new Error(
+          "STRK20 privacy transactions are not supported with the Privy wallet",
+        );
+      }
+
+      try {
+        await strk20InvokeOutput.invokeAsync(actions);
+      } catch (e) {
+        logger.verbose("EL::useSendTransaction::invokeAsync-error", e);
+        console.error("EL::useSendTransaction::invokeAsync-error", e);
+        throw e;
+      }
+    },
+    [mode, isPrivyWallet, strk20InvokeOutput.invokeAsync],
+  );
+
   // Create the callback function for sending transactions.
   const sendCallback = useCallback(
     getSendTransactionCallback(
@@ -283,6 +336,7 @@ export function useSendTransaction(): UseSendTransactionResult_EasyLeap {
   return {
     send: sendCallback,
     sendAsync: sendCallback,
+    invokeAsync,
     isPaused: isEVMMode ? (evmOutput.isPaused ?? false) : (snOutput.isPaused ?? false),
     isSuccess: activeIsSuccess,
     isError: activeIsError,

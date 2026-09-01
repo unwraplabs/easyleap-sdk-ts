@@ -2,6 +2,7 @@ export * from "../contexts/SharedState";
 export * from "./useAccount";
 export * from "./useAmountOut";
 export * from "./useBalance";
+export * from "./useStrk20Balance";
 export * from "./useMode";
 export * from "./useSendTransaction";
 export * from "./useWaitForTransaction";

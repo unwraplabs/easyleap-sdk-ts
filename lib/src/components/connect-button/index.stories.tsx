@@ -3,7 +3,7 @@ import { fn } from "@storybook/test";
 
 import { ConnectButton } from "./index";
 
-const meta = {
+const meta: Meta<typeof ConnectButton> = {
   title: "Components/ConnectButton",
   component: ConnectButton,
   parameters: {
@@ -25,7 +25,7 @@ const meta = {
   },
 
   decorators: [(Story) => <Story />]
-} satisfies Meta<typeof ConnectButton>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

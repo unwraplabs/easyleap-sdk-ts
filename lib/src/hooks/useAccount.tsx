@@ -1,12 +1,12 @@
 import {
+  starknetChainId,
   useAccount as useAccountSn,
   useNetwork,
   useSwitchChain,
-} from "@starknet-react/core";
+} from "@starknetfoundation/starknet-start-react";
 import { createConfig, http, switchChain as switchChainEVM } from "@wagmi/core";
 import { mainnet, sepolia } from "@wagmi/core/chains";
 import { useEffect } from "react";
-import { num } from "starknet";
 import { useAccount as useAccountWagmi, useConfig } from "wagmi";
 import { InteractionMode, useSharedState } from "../contexts/SharedState";
 import { usePrivyContext } from "../contexts/PrivyContext";
@@ -22,6 +22,7 @@ export interface useAccountResult {
   starknetAddress: `0x${string}` | undefined;
   chainIdEVM: number | undefined;
   chainIdSN: bigint | undefined;
+  connector: ReturnType<typeof useAccountSn>["connector"];
 }
 
 export const evmConfig = createConfig({
@@ -41,7 +42,11 @@ export const evmConfig = createConfig({
 export function useAccount(): useAccountResult {
   const config = useConfig();
   const { address: evmAddress, chainId: chainIdEVM } = useAccountWagmi();
-  const { address: starknetAddressSN, chainId: chainIdSN } = useAccountSn();
+  const {
+    address: starknetAddressSN,
+    chainId: chainIdSN,
+    connector: starknetConnector,
+  } = useAccountSn();
   const { chain } = useNetwork();
   const { privyWallet } = usePrivyContext();
   const sharedState = useSharedState();
@@ -60,7 +65,7 @@ export function useAccount(): useAccountResult {
 
   const result = useSwitchChain({
     params: {
-      chainId: num.getHexString(chain.id.toString()),
+      chainId: starknetChainId(chain.id)!,
     },
   });
 
@@ -121,5 +126,6 @@ export function useAccount(): useAccountResult {
     starknetAddress,
     chainIdEVM,
     chainIdSN,
+    connector: starknetConnector,
   };
 }

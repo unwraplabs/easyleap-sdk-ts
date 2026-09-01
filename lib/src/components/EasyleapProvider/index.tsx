@@ -1,10 +1,10 @@
-import { mainnet, sepolia } from "@starknet-react/chains";
+import { mainnet, sepolia } from "@starknetfoundation/starknet-start-chains";
+import { voyager } from "@starknetfoundation/starknet-start-explorers";
+import { publicProvider } from "@starknetfoundation/starknet-start-providers";
 import {
-    publicProvider,
     StarknetConfig,
-    StarknetConfigProps,
-    voyager
-} from "@starknet-react/core";
+    StarknetConfigProps
+} from "@starknetfoundation/starknet-start-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { mainnet as mainnetEVM, sepolia as sepoliaEVM } from "viem/chains";
@@ -282,12 +282,8 @@ export function EasyleapProvider(
                             >
                                 <WagmiProvider config={wagmiConfig}>
                                     <StarknetConfig
-                                        chains={starknetConfig.chains || [mainnet]}
-                                        provider={starknetConfig.provider}
-                                        explorer={starknetConfig.explorer}
-                                        connectors={
-                                            starknetConfig?.connectors || []
-                                        }
+                                        {...starknetConfig}
+                                        chains={starknetConfig.chains ?? [mainnet]}
                                     >
                                         <AnalyticsProvider token={mixpanelToken}>
                                             {props.children}
