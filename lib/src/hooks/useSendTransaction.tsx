@@ -66,11 +66,18 @@ function normalizeCalls(input: any): Call[] {
     .filter(Boolean) as Call[];
 }
 
+function toPlainCalls(calls: Call[]): Call[] {
+  return calls.map((call) =>
+    Array.isArray(call.calldata) ? { ...call, calldata: [...call.calldata] } : call,
+  );
+}
+
 function toSnSendArgs(
   calls: Call[],
   proof?: STRK20_PROOF,
 ): UseSendTransactionVariables {
-  return proof ? { calls, proof } : calls;
+  const plainCalls = toPlainCalls(calls);
+  return proof ? { calls: plainCalls, proof } : plainCalls;
 }
 
 function getSendTransactionCallback(

@@ -65,8 +65,8 @@ async function connectStarknetWallet(
     connectSN({ connector });
 }
 
-// Priority wallets to show first (Argent, Braavos, Xverse - including mobile variants)
-const PRIORITY_WALLET_IDS = ["argentX", "argentMobile", "braavos", "braavosMobile", "xverse"];
+// Priority wallets to show first (Bramble, Argent, Braavos, Xverse - including mobile variants)
+const PRIORITY_WALLET_IDS = ["bramble", "argentX", "argentMobile", "braavos", "braavosMobile", "xverse"];
 
 // Social login wallets (Cartridge)
 const SOCIAL_LOGIN_WALLET_IDS = ["cartridge", "controller", "cartridge controller"];
@@ -82,13 +82,14 @@ const WalletConnectPanel: React.FC<{
     evmAddress: `0x${string}` | undefined;
     starknetConnectorId: string | undefined;
     starknetConnectorName: string | undefined;
+    starknetConnectorIcon: string | undefined;
     evmConnectorName: string | undefined;
     disconnectSN: () => void;
     disconnectWagmi: () => void;
     onDisconnectStarknet?: () => void;
     onDisconnectEVM?: () => void;
     onDisconnectEvmSideEffects: () => void;
-    getWalletIcon: (walletId: string) => React.ReactNode;
+    getWalletIcon: (walletId: string, iconUrl?: string) => React.ReactNode;
     sharedState: ReturnType<typeof useSharedState>;
 }> = ({
     chainFilter,
@@ -100,6 +101,7 @@ const WalletConnectPanel: React.FC<{
     evmAddress,
     starknetConnectorId,
     starknetConnectorName,
+    starknetConnectorIcon,
     evmConnectorName,
     disconnectSN,
     disconnectWagmi,
@@ -141,7 +143,7 @@ const WalletConnectPanel: React.FC<{
         [evmConnectors]
     );
 
-    // Prioritize specific wallets in order: Argent, Braavos, Xverse
+    // Prioritize specific wallets in order: Bramble, Argent, Braavos, Xverse
     const priorityWallets = React.useMemo(
         () =>
             PRIORITY_WALLET_IDS
@@ -230,12 +232,12 @@ const WalletConnectPanel: React.FC<{
 
                     {!starknetAddress ? (
                         <div className="easyleap-space-y-2.5">
-                            {/* Priority wallets: Argent, Braavos, Xverse */}
+                            {/* Priority wallets: Bramble, Argent, Braavos, Xverse */}
                             {priorityWallets.map((connector) => (
                                 <ConnectRow
                                     key={getWalletId(connector)}
                                     label={walletLabel(connector.name)}
-                                    icon={getWalletIcon(getWalletId(connector))}
+                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                     onClick={async () => {
                                         if (isPrivyConnected) {
                                             await disconnectPrivy();
@@ -305,7 +307,7 @@ const WalletConnectPanel: React.FC<{
                                 <ConnectRow
                                     key={getWalletId(connector)}
                                     label={walletLabel(connector.name)}
-                                    icon={getWalletIcon(getWalletId(connector))}
+                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                     onClick={async () => {
                                         if (isPrivyConnected) {
                                             await disconnectPrivy();
@@ -359,7 +361,7 @@ const WalletConnectPanel: React.FC<{
                                                 <ConnectRow
                                                     key={getWalletId(connector)}
                                                     label={walletLabel(connector.name)}
-                                                    icon={getWalletIcon(getWalletId(connector))}
+                                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                                     onClick={async () => {
                                                         if (isPrivyConnected) {
                                                             await disconnectPrivy();
@@ -420,7 +422,8 @@ const WalletConnectPanel: React.FC<{
                                             <MailIcon className="easyleap-size-5" />
                                         ) : (
                                             getWalletIcon(
-                                                starknetConnectorId ?? "braavos"
+                                                starknetConnectorId ?? "braavos",
+                                                starknetConnectorIcon
                                             )
                                         )}
                                     </span>
@@ -623,25 +626,40 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         "argent web wallet": { Icon: Icons.wallet, size: "easyleap-size-7" }
     };
 
-    const getWalletIcon = (walletId: string) => {
+    // Falls back to the icon the wallet injects itself (data URI), then to a generic icon
+    const getWalletIcon = (walletId: string, iconUrl?: string) => {
         const key = walletId.toLowerCase();
         const wallet = walletIconMap[key];
         const padding = key === "argentx" ? "easyleap-p-0.5" : "easyleap-p-1";
 
-        return wallet ? (
-            <wallet.Icon
-                key={walletId}
-                className={cn(wallet.size || "easyleap-size-7", padding)}
-            />
-        ) : (
-            <Icons.wallet className="easyleap-size-7 easyleap-p-1" />
-        );
+        if (wallet) {
+            return (
+                <wallet.Icon
+                    key={walletId}
+                    className={cn(wallet.size || "easyleap-size-7", padding)}
+                />
+            );
+        }
+
+        if (iconUrl) {
+            return (
+                <img
+                    key={walletId}
+                    src={iconUrl}
+                    alt={walletId}
+                    className="easyleap-size-7 easyleap-p-1 easyleap-object-contain"
+                />
+            );
+        }
+
+        return <Icons.wallet className="easyleap-size-7 easyleap-p-1" />;
     };
 
     const starknetConnectorId = connectedSnConnector
         ? getWalletId(connectedSnConnector)
         : undefined;
     const starknetConnectorName = connectedSnConnector?.name;
+    const starknetConnectorIcon = connectedSnConnector?.icon;
 
     const onDisconnectEvmSideEffects = () => {
         // Don't manually set mode here - let useAccount hook handle it automatically
@@ -785,7 +803,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                                 getWalletIcon(
                                                     connectedSnConnector
                                                         ? getWalletId(connectedSnConnector)
-                                                        : "braavos"
+                                                        : "braavos",
+                                                    starknetConnectorIcon
                                                 )
                                             )}
                                         </span>
@@ -950,6 +969,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                         evmAddress={evmAddress}
                         starknetConnectorId={starknetConnectorId}
                         starknetConnectorName={starknetConnectorName}
+                        starknetConnectorIcon={starknetConnectorIcon}
                         evmConnectorName={connectorEVM?.name}
                         disconnectSN={disconnectSN}
                         disconnectWagmi={disconnectWagmi}
