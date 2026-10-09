@@ -5,6 +5,7 @@ const REGISTER_WALLET_EVENT = "wallet-standard:register-wallet";
 const LATE_INJECTING_WALLET_KEYS = [
   "starknet_argentX",
   "starknet_ready",
+  "starknet_bramble",
 ] as const;
 
 const STARKNET_WINDOW_OBJECT_KEYS = [
