@@ -2,7 +2,7 @@ import {
     useAccount as useAccountSn,
     useConnect as useConnectSN,
     useDisconnect as useDisconnectSN
-} from "@starknet-react/core";
+} from "@starknetfoundation/starknet-start-react";
 import { ChevronDown, ChevronUp, Loader2, MailIcon, X } from "lucide-react";
 import React from "react";
 import {
@@ -20,30 +20,56 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@lib/components/ui/dialog";
+import { useAnalytics } from "@lib/contexts/AnalyticsContext";
 import { InteractionMode, useSharedState } from "@lib/contexts/SharedState";
 import { useTheme } from "@lib/contexts/ThemeContext";
 import { useAccount, evmConfig } from "@lib/hooks/useAccount";
 import { useMode } from "@lib/hooks/useMode";
+import { PrivyEvents } from "@lib/utils/analytics";
 import { cn, shortAddress } from "@lib/utils";
 import { toast } from "@lib/hooks/use-toast";
 
 import { ModeSwitcher, type ConnectButtonProps } from ".";
 import { usePrivyContext } from "@lib/contexts/PrivyContext";
+import { announceLateInjectedWallets } from "@lib/utils/late-wallet-discovery";
 
 type ChainFilter = "all" | "starknet" | "ethereum";
 
-// Priority wallets to show first (Argent, Braavos, Xverse - including mobile variants)
-const PRIORITY_WALLET_IDS = ["argentX", "argentMobile", "braavos", "braavosMobile", "xverse"];
+function getWalletId(wallet: {
+    name: string;
+    features: Record<string, { id?: string } | unknown>;
+}): string {
+    const walletApi = wallet.features["starknet:walletApi"];
+    if (
+        walletApi &&
+        typeof walletApi === "object" &&
+        "id" in walletApi &&
+        typeof walletApi.id === "string"
+    ) {
+        return walletApi.id;
+    }
+    return wallet.name;
+}
+
+type StarknetConnector = ReturnType<typeof useConnectSN>["connectors"][number];
+
+async function connectStarknetWallet(
+    connector: StarknetConnector,
+    connectSN: ReturnType<typeof useConnectSN>["connect"],
+    connectSNAsync: ReturnType<typeof useConnectSN>["connectAsync"]
+) {
+    if (connectSNAsync) {
+        await connectSNAsync({ connector });
+        return;
+    }
+    connectSN({ connector });
+}
+
+// Priority wallets to show first (Bramble, Argent, Braavos, Xverse - including mobile variants)
+const PRIORITY_WALLET_IDS = ["bramble", "argentX", "argentMobile", "braavos", "braavosMobile", "xverse"];
 
 // Social login wallets (Cartridge)
 const SOCIAL_LOGIN_WALLET_IDS = ["cartridge", "controller", "cartridge controller"];
-
-// Validate Starknet address to prevent BigInt crash from empty "0x" addresses (Braavos mobile redirect bug)
-function isValidStarknetAddress(account: string | undefined): boolean {
-    if (typeof account !== "string" || account.length <= 2) return false;
-    if (!account.startsWith("0x")) return false;
-    return (/^0x[0-9a-fA-F]+$/).test(account);
-}
 
 /** Calls starknet + wagmi connect hooks; must render under StarknetConfig + WagmiProvider. */
 const WalletConnectPanel: React.FC<{
@@ -56,13 +82,14 @@ const WalletConnectPanel: React.FC<{
     evmAddress: `0x${string}` | undefined;
     starknetConnectorId: string | undefined;
     starknetConnectorName: string | undefined;
+    starknetConnectorIcon: string | undefined;
     evmConnectorName: string | undefined;
     disconnectSN: () => void;
     disconnectWagmi: () => void;
     onDisconnectStarknet?: () => void;
     onDisconnectEVM?: () => void;
     onDisconnectEvmSideEffects: () => void;
-    getWalletIcon: (walletId: string) => React.ReactNode;
+    getWalletIcon: (walletId: string, iconUrl?: string) => React.ReactNode;
     sharedState: ReturnType<typeof useSharedState>;
 }> = ({
     chainFilter,
@@ -74,6 +101,7 @@ const WalletConnectPanel: React.FC<{
     evmAddress,
     starknetConnectorId,
     starknetConnectorName,
+    starknetConnectorIcon,
     evmConnectorName,
     disconnectSN,
     disconnectWagmi,
@@ -92,6 +120,7 @@ const WalletConnectPanel: React.FC<{
         useConnectWagmi();
     const { user, privyWallet, connectPrivy, disconnectPrivy, isLoadingWallet } =
         usePrivyContext();
+    const { track } = useAnalytics();
 
     const isPrivyConnected = React.useMemo(() => {
         return !!user || !!privyWallet?.address;
@@ -100,7 +129,8 @@ const WalletConnectPanel: React.FC<{
     const uniqueSn = React.useMemo(
         () =>
             snConnectors.filter(
-                (c, i, self) => i === self.findIndex((x) => x.id === c.id)
+                (c, i, self) =>
+                    i === self.findIndex((x) => getWalletId(x) === getWalletId(c))
             ),
         [snConnectors]
     );
@@ -113,11 +143,11 @@ const WalletConnectPanel: React.FC<{
         [evmConnectors]
     );
 
-    // Prioritize specific wallets in order: Argent, Braavos, Xverse
+    // Prioritize specific wallets in order: Bramble, Argent, Braavos, Xverse
     const priorityWallets = React.useMemo(
         () =>
             PRIORITY_WALLET_IDS
-                .map((id) => uniqueSn.find((c) => c.id === id))
+                .map((id) => uniqueSn.find((c) => getWalletId(c) === id))
                 .filter((c): c is NonNullable<typeof c> => c !== undefined),
         [uniqueSn]
     );
@@ -126,7 +156,7 @@ const WalletConnectPanel: React.FC<{
     const socialLoginWallets = React.useMemo(
         () =>
             SOCIAL_LOGIN_WALLET_IDS
-                .map((id) => uniqueSn.find((c) => c.id === id))
+                .map((id) => uniqueSn.find((c) => getWalletId(c) === id))
                 .filter((c): c is NonNullable<typeof c> => c !== undefined),
         [uniqueSn]
     );
@@ -134,7 +164,9 @@ const WalletConnectPanel: React.FC<{
     const otherWallets = React.useMemo(
         () =>
             uniqueSn.filter(
-                (c) => !PRIORITY_WALLET_IDS.includes(c.id) && !SOCIAL_LOGIN_WALLET_IDS.includes(c.id)
+                (c) =>
+                    !PRIORITY_WALLET_IDS.includes(getWalletId(c)) &&
+                    !SOCIAL_LOGIN_WALLET_IDS.includes(getWalletId(c))
             ),
         [uniqueSn]
     );
@@ -200,31 +232,22 @@ const WalletConnectPanel: React.FC<{
 
                     {!starknetAddress ? (
                         <div className="easyleap-space-y-2.5">
-                            {/* Priority wallets: Argent, Braavos, Xverse */}
+                            {/* Priority wallets: Bramble, Argent, Braavos, Xverse */}
                             {priorityWallets.map((connector) => (
                                 <ConnectRow
-                                    key={connector.id}
+                                    key={getWalletId(connector)}
                                     label={walletLabel(connector.name)}
-                                    icon={getWalletIcon(connector.id)}
+                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                     onClick={async () => {
                                         if (isPrivyConnected) {
                                             await disconnectPrivy();
                                         }
                                             try {
-                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
-                                                const data = await connector.connect({});
-                                                if (!isValidStarknetAddress(data?.account)) {
-                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
-                                                    return;
-                                                }
-                                                
-                                                if (connectSNAsync) {
-                                                    await connectSNAsync({
-                                                        connector
-                                                    } as any);
-                                                } else {
-                                                    connectSN({ connector } as any);
-                                                }
+                                                await connectStarknetWallet(
+                                                    connector,
+                                                    connectSN,
+                                                    connectSNAsync
+                                                );
                                                 setTimeout(() => {
                                                     sharedState.setConnectWalletModalOpen(false);
                                                 }, 500);
@@ -251,6 +274,7 @@ const WalletConnectPanel: React.FC<{
                             <button
                                 type="button"
                                 onClick={async () => {
+                                    track(PrivyEvents.WALLET_CONNECT_CLICKED);
                                     await connectPrivy();
                                     onConnectStarknet?.();
                                     setTimeout(() => {
@@ -281,28 +305,19 @@ const WalletConnectPanel: React.FC<{
                             {/* Social login wallets: Cartridge */}
                             {socialLoginWallets.map((connector) => (
                                 <ConnectRow
-                                    key={connector.id}
+                                    key={getWalletId(connector)}
                                     label={walletLabel(connector.name)}
-                                    icon={getWalletIcon(connector.id)}
+                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                     onClick={async () => {
                                         if (isPrivyConnected) {
                                             await disconnectPrivy();
                                         }
                                             try {
-                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
-                                                const data = await connector.connect({});
-                                                if (!isValidStarknetAddress(data?.account)) {
-                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
-                                                    return;
-                                                }
-                                                
-                                                if (connectSNAsync) {
-                                                    await connectSNAsync({
-                                                        connector
-                                                    } as any);
-                                                } else {
-                                                    connectSN({ connector } as any);
-                                                }
+                                                await connectStarknetWallet(
+                                                    connector,
+                                                    connectSN,
+                                                    connectSNAsync
+                                                );
                                                 setTimeout(() => {
                                                     sharedState.setConnectWalletModalOpen(false);
                                                 }, 500);
@@ -344,28 +359,19 @@ const WalletConnectPanel: React.FC<{
                                         <>
                                             {otherWallets.map((connector) => (
                                                 <ConnectRow
-                                                    key={connector.id}
+                                                    key={getWalletId(connector)}
                                                     label={walletLabel(connector.name)}
-                                                    icon={getWalletIcon(connector.id)}
+                                                    icon={getWalletIcon(getWalletId(connector), connector.icon)}
                                                     onClick={async () => {
                                                         if (isPrivyConnected) {
                                                             await disconnectPrivy();
                                                         }
                                                             try {
-                                                                // Validate address before connectAsync to avoid BigInt crash on empty "0x" address
-                                                                const data = await connector.connect({});
-                                                                if (!isValidStarknetAddress(data?.account)) {
-                                                                    console.warn("Invalid address returned from wallet connector, skipping connectAsync");
-                                                                    return;
-                                                                }
-                                                                
-                                                                if (connectSNAsync) {
-                                                                    await connectSNAsync({
-                                                                        connector
-                                                                    } as any);
-                                                                } else {
-                                                                    connectSN({ connector } as any);
-                                                                }
+                                                                await connectStarknetWallet(
+                                                                    connector,
+                                                                    connectSN,
+                                                                    connectSNAsync
+                                                                );
                                                                 setTimeout(() => {
                                                                     sharedState.setConnectWalletModalOpen(false);
                                                                 }, 500);
@@ -416,7 +422,8 @@ const WalletConnectPanel: React.FC<{
                                             <MailIcon className="easyleap-size-5" />
                                         ) : (
                                             getWalletIcon(
-                                                starknetConnectorId ?? "braavos"
+                                                starknetConnectorId ?? "braavos",
+                                                starknetConnectorIcon
                                             )
                                         )}
                                     </span>
@@ -619,23 +626,40 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
         "argent web wallet": { Icon: Icons.wallet, size: "easyleap-size-7" }
     };
 
-    const getWalletIcon = (walletId: string) => {
+    // Falls back to the icon the wallet injects itself (data URI), then to a generic icon
+    const getWalletIcon = (walletId: string, iconUrl?: string) => {
         const key = walletId.toLowerCase();
         const wallet = walletIconMap[key];
         const padding = key === "argentx" ? "easyleap-p-0.5" : "easyleap-p-1";
 
-        return wallet ? (
-            <wallet.Icon
-                key={walletId}
-                className={cn(wallet.size || "easyleap-size-7", padding)}
-            />
-        ) : (
-            <Icons.wallet className="easyleap-size-7 easyleap-p-1" />
-        );
+        if (wallet) {
+            return (
+                <wallet.Icon
+                    key={walletId}
+                    className={cn(wallet.size || "easyleap-size-7", padding)}
+                />
+            );
+        }
+
+        if (iconUrl) {
+            return (
+                <img
+                    key={walletId}
+                    src={iconUrl}
+                    alt={walletId}
+                    className="easyleap-size-7 easyleap-p-1 easyleap-object-contain"
+                />
+            );
+        }
+
+        return <Icons.wallet className="easyleap-size-7 easyleap-p-1" />;
     };
 
-    const starknetConnectorId = connectedSnConnector?.id;
+    const starknetConnectorId = connectedSnConnector
+        ? getWalletId(connectedSnConnector)
+        : undefined;
     const starknetConnectorName = connectedSnConnector?.name;
+    const starknetConnectorIcon = connectedSnConnector?.icon;
 
     const onDisconnectEvmSideEffects = () => {
         // Don't manually set mode here - let useAccount hook handle it automatically
@@ -711,6 +735,8 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
             <Dialog
                 open={sharedState.connectWalletModalOpen}
                 onOpenChange={(open) => {
+                    // This is a fix for injecting Ready Wallet on Android that would have been otherwise to late to be injected
+                    if (open) announceLateInjectedWallets();
                     sharedState.setConnectWalletModalOpen(open);
                     if (!open) setChainFilter("all");
                 }}
@@ -775,8 +801,10 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                                                 <MailIcon className="!easyleap-size-5" />
                                             ) : (
                                                 getWalletIcon(
-                                                    connectedSnConnector?.id ??
-                                                        "braavos"
+                                                    connectedSnConnector
+                                                        ? getWalletId(connectedSnConnector)
+                                                        : "braavos",
+                                                    starknetConnectorIcon
                                                 )
                                             )}
                                         </span>
@@ -941,6 +969,7 @@ export const ButtonDialog: React.FC<ConnectButtonProps> = ({
                         evmAddress={evmAddress}
                         starknetConnectorId={starknetConnectorId}
                         starknetConnectorName={starknetConnectorName}
+                        starknetConnectorIcon={starknetConnectorIcon}
                         evmConnectorName={connectorEVM?.name}
                         disconnectSN={disconnectSN}
                         disconnectWagmi={disconnectWagmi}

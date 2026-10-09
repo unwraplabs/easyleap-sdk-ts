@@ -50,8 +50,10 @@ export default defineConfig(({ command, mode }) => {
                       external: [
                           "react",
                           "react-dom",
-                          "@starknet-react/chains",
-                          "@starknet-react/core",
+                          "@starknetfoundation/starknet-start-chains",
+                          "@starknetfoundation/starknet-start-explorers",
+                          "@starknetfoundation/starknet-start-providers",
+                          "@starknetfoundation/starknet-start-react",
                           "starknet",
                           "starknetkit",
                           "wagmi",

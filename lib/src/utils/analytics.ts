@@ -37,6 +37,11 @@ export function identifyUser(distinctId: string) {
   }
 }
 
+export const PrivyEvents = {
+  WALLET_CONNECT_CLICKED: "privy_wallet_connect_clicked",
+  WALLET_CONNECTED: "privy_wallet_connected",
+} as const;
+
 export const BridgeEvents = {
   BUTTON_CLICKED: "bridge_button_clicked",
   WALLETS_CONNECTED: "bridge_wallets_connected",
@@ -45,7 +50,12 @@ export const BridgeEvents = {
   PROVIDER_SELECTED: "bridge_provider_selected",
   INITIATED: "bridge_initiated",
   TX_SUBMITTED: "bridge_tx_submitted",
-  STATE_CHANGE: "bridge_state_change",
+  // Granular bridge state events
+  SUBMITTED_ON_L1: "bridge_submitted_on_l1",
+  CONFIRMED_ON_L1: "bridge_confirmed_on_l1",
+  SUBMITTED_ON_STARKNET: "bridge_submitted_on_starknet",
+  CONFIRMED_ON_STARKNET: "bridge_confirmed_on_starknet",
+  COMPLETED_ON_STARKNET: "bridge_completed_on_starknet",
   COMPLETED: "bridge_completed",
   FAILED: "bridge_failed",
 } as const;

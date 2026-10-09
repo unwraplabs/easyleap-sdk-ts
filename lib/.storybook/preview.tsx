@@ -1,7 +1,5 @@
 import type { Preview } from "@storybook/react";
 import React from "react";
-import { InjectedConnector } from "@starknet-react/core";
-import { WebWalletConnector } from "starknetkit/webwallet";
 
 import "../src/styles.css";
 
@@ -27,19 +25,7 @@ const preview: Preview = {
   decorators: [
     (Story) => (
       <EasyleapProvider
-        starknetConfig={{
-          chains: defaultEasyleapConfig().starknetConfig.chains,
-          provider: defaultEasyleapConfig().starknetConfig.provider,
-          explorer: defaultEasyleapConfig().starknetConfig.explorer,
-          connectors: [
-            new WebWalletConnector(),
-            new InjectedConnector({ options: { id: "argentX" } }),
-            new InjectedConnector({ options: { id: "braavos" } }),
-            new InjectedConnector({
-              options: { id: "metamask", name: "MetaMask" }
-            })
-          ]
-        }}
+        starknetConfig={defaultEasyleapConfig().starknetConfig}
         theme={easyleapConfig.theme}
       >
         <Story />

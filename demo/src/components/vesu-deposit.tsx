@@ -29,7 +29,7 @@ import { ADDRESSES } from "@easyleap/sdk";
 import { Icons } from "./Icons";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Address } from "@starknet-react/chains";
+import { Address } from "@starknetfoundation/starknet-start-chains";
 
 const formSchema = z.object({
   depositAmount: z.string().refine(

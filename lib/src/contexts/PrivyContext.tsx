@@ -8,6 +8,7 @@ import React, {
 import { ArgentXV050Preset, StarkZap, type WalletInterface } from "starkzap";
 import { useLogin, useLogout, usePrivy, useUser } from "@privy-io/react-auth";
 import { toast } from "@lib/hooks/use-toast";
+import { PrivyEvents, trackEvent } from "@lib/utils/analytics";
 import { logger } from "@lib/utils/logger";
 
 export interface PrivyProviderConfig {
@@ -203,6 +204,14 @@ export const PrivyContextProvider: React.FC<{
       // The following wallet is to be used
       const connectedWallet = onboard.wallet;
       setStarkzapWallet(connectedWallet);
+
+      trackEvent(PrivyEvents.WALLET_CONNECTED, {
+        network: config?.network,
+        privyUserId: lastUserIdRef.current ?? undefined,
+        starknetAddress: wallet.address,
+      });
+
+
       logger.verbose("[PrivyContext] Wallet connected", { connectedWallet });
     } catch (error: any) {
       logger.error("[PrivyContext] Error setting up wallet", error);
