@@ -20,6 +20,7 @@ import {
     isUserRejection,
     KNOWN_WALLETS,
     PRIMARY_WALLET_IDS,
+    SECONDARY_WALLET_IDS,
     type WalletListItem
 } from "@lib/utils/wallet-list";
 
@@ -236,7 +237,12 @@ export const ConnectDrawer: React.FC<ConnectDrawerProps> = ({
         [unique, lastUsedId, env]
     );
     // Installed wallets and the main ones are always listed; the rest sit under "More wallets"
-    const shown = items.filter((i) => i.kind === "installed" || PRIMARY_WALLET_IDS.includes(i.id));
+    const shown = items.filter(
+        (i) =>
+            i.isLastUsed ||
+            PRIMARY_WALLET_IDS.includes(i.id) ||
+            (i.kind === "installed" && !SECONDARY_WALLET_IDS.includes(i.id))
+    );
     const more = items.filter((i) => !shown.includes(i));
 
     const uniqueEvm = React.useMemo(

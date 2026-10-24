@@ -28,6 +28,8 @@ export interface SharedUi {
   appName?: string;
   /** "New to Starknet wallets?" link in the connect dialog; hidden when unset */
   walletHelpUrl?: string;
+  /** Token logo URLs by asset symbol (e.g. { STRK: "/strk.svg" }); assets without one get a dot */
+  assetIcons?: Record<string, string>;
 }
 
 export type SharedUiOptions = Partial<SharedUi>;
@@ -132,9 +134,10 @@ export const SharedStateProvider = ({
       enableEvmMode: ui?.enableEvmMode ?? true,
       enableEmailLogin: ui?.enableEmailLogin ?? true,
       appName: ui?.appName,
-      walletHelpUrl: ui?.walletHelpUrl
+      walletHelpUrl: ui?.walletHelpUrl,
+      assetIcons: ui?.assetIcons
     }),
-    [ui?.enableEvmMode, ui?.enableEmailLogin, ui?.appName, ui?.walletHelpUrl]
+    [ui?.enableEvmMode, ui?.enableEmailLogin, ui?.appName, ui?.walletHelpUrl, ui?.assetIcons]
   );
 
   // BRIDGE MODE - reviewModalProps state commented out
