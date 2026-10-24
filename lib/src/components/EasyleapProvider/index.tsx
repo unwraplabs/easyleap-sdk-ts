@@ -23,7 +23,7 @@ import type { PrivyClientConfig } from "@privy-io/react-auth";
 import { Toaster } from "@lib/components/ui/toaster";
 import { AnalyticsProvider } from "@lib/contexts/AnalyticsContext";
 import { BridgeStarkzapContextProvider } from "@lib/contexts/BridgeStarkzapContext";
-import { SharedStateProvider } from "@lib/contexts/SharedState";
+import { SharedStateProvider, type SharedUiOptions } from "@lib/contexts/SharedState";
 import { GlobalTheme, ThemeProvider } from "@lib/contexts/ThemeContext";
 import { PrivyContextProvider } from "@lib/contexts/PrivyContext";
 import { readEnv } from "@lib/utils/env";
@@ -58,9 +58,7 @@ export interface EasyleapConfig {
     /**
      * UI feature flags. Defaults preserve existing behavior.
      */
-    ui?: {
-        enableEvmMode?: boolean;
-    };
+    ui?: SharedUiOptions;
     /**
      * Mixpanel project token for bridge analytics.
      * When provided, bridge lifecycle events are tracked automatically.

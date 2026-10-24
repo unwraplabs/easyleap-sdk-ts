@@ -100,6 +100,10 @@ export interface GlobalTheme {
     closeButtonColor?: string;
     moreOptionsBackground?: string;
     moreOptionsTextColor?: string;
+    /** Info card and account card background (defaults to rowHoverBackground) */
+    cardBackground?: string;
+    /** Backdrop behind the connect drawer */
+    overlayBackground?: string;
     /**
      * Primary font stack for connect trigger, modal, and mode switch (e.g. `"Figtree", sans-serif`).
      * Host apps using `next/font` can pass `font.style.fontFamily` here for optimized loading.
@@ -144,6 +148,8 @@ export interface GlobalTheme {
     modalBorderRadius?: string;
     providerExternalIconOpacity?: number;
     providerExternalIconHoverOpacity?: number;
+    /** Dot color for Bitcoin assets in the bridge's asset chips (STRK uses brandGreen) */
+    btcAccent?: string;
     /**
      * Primary font stack for bridge dialog (trigger, modal, options, progress).
      * Host apps using `next/font` can pass `font.style.fontFamily` here.

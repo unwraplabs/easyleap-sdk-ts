@@ -20,15 +20,25 @@ export enum InteractionMode {
   None = "None"
 }
 
+export interface SharedUi {
+  enableEvmMode: boolean;
+  /** Show "Email or Google" (Privy) in the connect dialog */
+  enableEmailLogin: boolean;
+  /** Host app name used in dialog copy ("Signed in to Endur"); generic copy when unset */
+  appName?: string;
+  /** "New to Starknet wallets?" link in the connect dialog; hidden when unset */
+  walletHelpUrl?: string;
+}
+
+export type SharedUiOptions = Partial<SharedUi>;
+
 export interface SharedContext {
   mode: InteractionMode;
   setMode: (value: InteractionMode) => void;
   isModeSwitchedManually: boolean;
   setModeSwitchedManually: (value: boolean) => void;
 
-  ui: {
-    enableEvmMode: boolean;
-  };
+  ui: SharedUi;
 
   // BRIDGE MODE - reviewModalProps commented out (bridge-specific)
   // reviewModalProps: ReviewModalProps;
@@ -63,7 +73,8 @@ const SharedStateContext = React.createContext({
   setModeSwitchedManually: () => {},
 
   ui: {
-    enableEvmMode: true
+    enableEvmMode: true,
+    enableEmailLogin: true
   },
 
   // BRIDGE MODE - reviewModalProps commented out
@@ -110,7 +121,7 @@ export const SharedStateProvider = ({
   ui,
   children
 }: {
-  ui?: { enableEvmMode?: boolean };
+  ui?: SharedUiOptions;
   children: React.ReactNode;
 }) => {
   const [mode, setMode] = React.useState(InteractionMode.None);
@@ -118,9 +129,12 @@ export const SharedStateProvider = ({
     React.useState(false);
   const uiValue = React.useMemo(
     () => ({
-      enableEvmMode: ui?.enableEvmMode ?? true
+      enableEvmMode: ui?.enableEvmMode ?? true,
+      enableEmailLogin: ui?.enableEmailLogin ?? true,
+      appName: ui?.appName,
+      walletHelpUrl: ui?.walletHelpUrl
     }),
-    [ui?.enableEvmMode]
+    [ui?.enableEvmMode, ui?.enableEmailLogin, ui?.appName, ui?.walletHelpUrl]
   );
 
   // BRIDGE MODE - reviewModalProps state commented out

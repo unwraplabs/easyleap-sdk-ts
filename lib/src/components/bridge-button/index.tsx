@@ -3,6 +3,8 @@ import { BridgeDialog } from "@lib/components/bridge-dialog";
 export interface BridgeButtonProps {
     onBridgeSuccess?: (txHash: string) => void;
     onBridgeError?: (error: Error) => void;
+    /** See BridgeDialogProps.onStakeAsset */
+    onStakeAsset?: (symbol: string) => void;
     style?: {
         buttonStyles?: React.CSSProperties;
         modalStyles?: React.CSSProperties;
@@ -13,6 +15,7 @@ export interface BridgeButtonProps {
 export const BridgeButton: React.FC<BridgeButtonProps> = ({
     onBridgeSuccess,
     onBridgeError,
+    onStakeAsset,
     style = {
         buttonStyles: {},
         modalStyles: {}
@@ -24,6 +27,7 @@ export const BridgeButton: React.FC<BridgeButtonProps> = ({
             <BridgeDialog
                 onBridgeSuccess={onBridgeSuccess}
                 onBridgeError={onBridgeError}
+                onStakeAsset={onStakeAsset}
                 style={style}
                 className={className}
             />

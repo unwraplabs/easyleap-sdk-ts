@@ -68,6 +68,7 @@ const ConnectRow: React.FC<{
 export const BridgeDialog: React.FC<BridgeDialogProps> = ({
   onBridgeSuccess,
   onBridgeError,
+  onStakeAsset,
   style = {},
   className = "",
   lstConfig = DEFAULT_LST_CONFIGS,
@@ -178,53 +179,78 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
       </TooltipProvider>
 
       <DialogContent
-        className="!easyleap-w-[350px] md:!easyleap-w-full !easyleap-max-w-[576px] !easyleap-max-h-[90vh] md:!easyleap-max-h-[734px] !easyleap-overflow-y-auto easyleap-rounded-[10px] easyleap-border easyleap-p-3 md:easyleap-p-[16px_13px]"
+        hideClose
+        className="!easyleap-w-[calc(100vw-32px)] md:!easyleap-w-full !easyleap-max-w-[620px] !easyleap-max-h-[calc(100dvh-32px)] !easyleap-overflow-y-auto !easyleap-gap-6 easyleap-px-5 easyleap-py-7 sm:easyleap-px-8"
         style={{
           backgroundColor: bd.white,
           border: bd.modalBorder,
-          boxShadow: "0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+          borderRadius: bd.modalBorderRadius,
+          boxShadow: `inset 0 2px 0 ${bd.brandGreen}, 0 40px 100px -30px rgba(0,0,0,0.5)`,
+          color: bd.gray1200,
           fontFamily: bd.fontFamily,
           ...style?.modalStyles,
         }}
       >
         {/* Header */}
-        <DialogHeader className="easyleap-mb-0 !easyleap-flex-row !easyleap-items-center !easyleap-space-y-0 easyleap-gap-2 md:easyleap-gap-3 easyleap-p-0">
-          {!showOptionsView && (
-            <button
-              onClick={handleBackToOptions}
-              className="easyleap-flex easyleap-size-6 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-transition-opacity hover:easyleap-opacity-60"
-              aria-label="Go back"
-            >
-              <ArrowLeft
-                className="easyleap-size-[18px]"
-                style={{ color: bd.gray1200 }}
-                strokeWidth={1.8}
-              />
-            </button>
-          )}
-          <DialogTitle
-            className="easyleap-flex-1 easyleap-text-left easyleap-text-lg md:easyleap-text-2xl !easyleap-font-medium easyleap-leading-6 md:easyleap-leading-8"
-            style={{
-              color: bd.brandGreenDark,
-              letterSpacing: "0.07px",
-            }}
+        <DialogHeader className="!easyleap-flex-row !easyleap-items-start !easyleap-justify-between !easyleap-space-y-0 easyleap-gap-4 easyleap-p-0 easyleap-text-left">
+          <div className="easyleap-flex easyleap-min-w-0 easyleap-items-start easyleap-gap-3">
+            {!showOptionsView && (
+              <button
+                type="button"
+                onClick={handleBackToOptions}
+                className="easyleap-flex easyleap-size-11 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-rounded-xl"
+                style={{ border: `1px solid ${bd.gray300}`, background: "transparent", color: bd.gray1200, cursor: "pointer" }}
+                aria-label="Back to bridges"
+              >
+                <ArrowLeft className="easyleap-size-[18px]" strokeWidth={2} />
+              </button>
+            )}
+            <div className="easyleap-flex easyleap-flex-col easyleap-gap-[10px]">
+              {showOptionsView && (
+                <span
+                  className="easyleap-flex easyleap-items-center easyleap-gap-[10px]"
+                  style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.18em", color: bd.brandGreen }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                    <circle cx="8" cy="8" r="7" />
+                    <circle cx="8" cy="8" r="3.5" />
+                    <circle cx="8" cy="8" r="1" fill="currentColor" />
+                  </svg>
+                  BRIDGE
+                </span>
+              )}
+              <DialogTitle
+                className="!easyleap-m-0"
+                style={{
+                  fontSize: showOptionsView ? "clamp(30px, 5vw, 40px)" : "clamp(24px, 4vw, 30px)",
+                  lineHeight: 1,
+                  fontWeight: 700,
+                  letterSpacing: "-0.04em",
+                  color: bd.gray1200,
+                }}
+              >
+                {showOptionsView ? (
+                  <>
+                    Bring assets
+                    <br />
+                    to Starknet.
+                  </>
+                ) : (
+                  `Bridge ${selectedAsset.SYMBOL} to Starknet`
+                )}
+              </DialogTitle>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleDialogClose(false)}
+            aria-label="Close"
+            className="easyleap-flex easyleap-size-11 easyleap-shrink-0 easyleap-items-center easyleap-justify-center easyleap-rounded-xl"
+            style={{ border: `1px solid ${bd.gray300}`, background: "transparent", color: bd.gray1200, cursor: "pointer" }}
           >
-            {showOptionsView ? "Bridge Assets" : `Bridge ${selectedAsset.SYMBOL} to Starknet`}
-          </DialogTitle>
+            <X className="easyleap-size-[18px]" strokeWidth={2} />
+          </button>
         </DialogHeader>
-
-        {/* Description for options view */}
-        {showOptionsView && (
-          <p
-            className="easyleap-text-sm easyleap-leading-5"
-            style={{
-              color: bd.brandGreenDark,
-              letterSpacing: "-0.15px",
-            }}
-          >
-            Select the asset you want to bridge and choose a provider to get started
-          </p>
-        )}
 
         {/* Content */}
         {showOptionsView ? (
@@ -233,6 +259,14 @@ export const BridgeDialog: React.FC<BridgeDialogProps> = ({
             selectedAsset={selectedAsset}
             onAssetChange={setSelectedAsset}
             onStarkgateSelect={handleStarkgateSelect}
+            onStakeAsset={
+              onStakeAsset
+                ? (symbol) => {
+                    handleDialogClose(false);
+                    onStakeAsset(symbol);
+                  }
+                : undefined
+            }
           />
         ) : (
           <div className="easyleap-flex easyleap-flex-col easyleap-gap-2.5 md:easyleap-gap-3.5">

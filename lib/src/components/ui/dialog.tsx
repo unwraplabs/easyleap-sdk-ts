@@ -33,19 +33,27 @@ const DialogContent = React.forwardRef<
     closeClassName?: string;
     closeStyle?: React.CSSProperties;
     onClickClose?: () => void;
+    /** "drawer": full-height panel on the right (full width on phones) */
+    variant?: "dialog" | "drawer";
+    /** Hide the built-in close button (the content renders its own) */
+    hideClose?: boolean;
+    overlayStyle?: React.CSSProperties;
   }
->(({ className, children, closeClassName, closeStyle, onClickClose, ...props }, ref) => (
+>(({ className, children, closeClassName, closeStyle, onClickClose, variant = "dialog", hideClose = false, overlayStyle, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
+    <DialogOverlay style={overlayStyle} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "easyleap-fixed easyleap-left-[50%] easyleap-top-[50%] easyleap-z-50 easyleap-grid easyleap-w-[calc(100vw-32px)] sm:easyleap-w-[425px] easyleap-max-w-[425px] easyleap-translate-x-[-50%] easyleap-translate-y-[-50%] easyleap-gap-4 easyleap-p-6 easyleap-shadow-lg easyleap-duration-200 data-[state=open]:easyleap-animate-in data-[state=closed]:easyleap-animate-out data-[state=closed]:easyleap-fade-out-0 data-[state=open]:easyleap-fade-in-0 data-[state=closed]:easyleap-zoom-out-95 data-[state=open]:easyleap-zoom-in-95 data-[state=closed]:easyleap-slide-out-to-left-1/2 data-[state=closed]:easyleap-slide-out-to-top-[48%] data-[state=open]:easyleap-slide-in-from-left-1/2 data-[state=open]:easyleap-slide-in-from-top-[48%] easyleap-rounded-[10px]",
+        variant === "drawer"
+          ? "easyleap-fixed easyleap-right-0 easyleap-top-0 easyleap-z-50 easyleap-flex easyleap-flex-col easyleap-h-[100dvh] easyleap-w-full easyleap-max-w-[440px] easyleap-overflow-y-auto easyleap-shadow-lg easyleap-duration-200 data-[state=open]:easyleap-animate-in data-[state=closed]:easyleap-animate-out data-[state=closed]:easyleap-fade-out-0 data-[state=open]:easyleap-fade-in-0 data-[state=closed]:easyleap-slide-out-to-right data-[state=open]:easyleap-slide-in-from-right"
+          : "easyleap-fixed easyleap-left-[50%] easyleap-top-[50%] easyleap-z-50 easyleap-grid easyleap-w-[calc(100vw-32px)] sm:easyleap-w-[425px] easyleap-max-w-[425px] easyleap-translate-x-[-50%] easyleap-translate-y-[-50%] easyleap-gap-4 easyleap-p-6 easyleap-shadow-lg easyleap-duration-200 data-[state=open]:easyleap-animate-in data-[state=closed]:easyleap-animate-out data-[state=closed]:easyleap-fade-out-0 data-[state=open]:easyleap-fade-in-0 data-[state=closed]:easyleap-zoom-out-95 data-[state=open]:easyleap-zoom-in-95 data-[state=closed]:easyleap-slide-out-to-left-1/2 data-[state=closed]:easyleap-slide-out-to-top-[48%] data-[state=open]:easyleap-slide-in-from-left-1/2 data-[state=open]:easyleap-slide-in-from-top-[48%] easyleap-rounded-[10px]",
         className
       )}
       {...props}
     >
       {children}
+      {!hideClose && (
       <DialogPrimitive.Close
         className={cn(
           "easyleap-absolute easyleap-right-4 easyleap-top-4 easyleap-rounded-sm easyleap-opacity-70 easyleap-ring-offset-black easyleap-transition-opacity hover:easyleap-opacity-100 focus:easyleap-outline-none focus:easyleap-ring-2 focus:easyleap-ring-[#0A0A0A] focus:easyleap-ring-offset-2 disabled:easyleap-pointer-events-none data-[state=open]:easyleap-bg-transparent data-[state=open]:easyleap-text-[#757575]",
@@ -57,6 +65,7 @@ const DialogContent = React.forwardRef<
         <X className="easyleap-h-4 easyleap-w-4" />
         <span className="easyleap-sr-only">Close</span>
       </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
