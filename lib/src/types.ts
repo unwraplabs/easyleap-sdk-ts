@@ -3,6 +3,11 @@ import { BridgeTransferStatus, DepositState } from "starkzap";
 export interface BridgeDialogProps {
   onBridgeSuccess?: (txHash: string) => void;
   onBridgeError?: (error: Error) => void;
+  /**
+   * Shows "Stake <asset> →" on the bridge options; called with the asset symbol after the dialog
+   * closes, so the app can take the user to that asset's staking form
+   */
+  onStakeAsset?: (symbol: string) => void;
   style?: {
     buttonStyles?: React.CSSProperties;
     modalStyles?: React.CSSProperties;
