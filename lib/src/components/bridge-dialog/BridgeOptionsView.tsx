@@ -68,7 +68,7 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
 }) => {
   const { track } = useAnalytics();
   const bd = useTheme().bridgeDialog!;
-  const { appName } = useSharedState().ui;
+  const { appName, assetIcons } = useSharedState().ui;
 
   const symbol = selectedAsset.SYMBOL;
   const providers: BridgeProvider[] = [
@@ -110,7 +110,7 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
                   track(BridgeEvents.ASSET_SELECTED, { asset: asset.SYMBOL, context: "bridge_options" });
                   onAssetChange(asset);
                 }}
-                className="easyleap-flex easyleap-h-11 easyleap-items-center easyleap-gap-2 easyleap-rounded-full easyleap-pl-3 easyleap-pr-4 easyleap-transition-colors"
+                className="easyleap-flex easyleap-h-11 easyleap-items-center easyleap-gap-2 easyleap-rounded-full easyleap-pl-2.5 easyleap-pr-4 easyleap-transition-colors"
                 style={{
                   fontSize: 15,
                   fontWeight: isSelected ? 600 : 500,
@@ -120,7 +120,16 @@ export const BridgeOptionsView: React.FC<BridgeOptionsViewProps> = ({
                   cursor: "pointer",
                 }}
               >
-                <span aria-hidden="true" className="easyleap-size-2.5 easyleap-rounded-full" style={{ backgroundColor: dot }} />
+                {assetIcons?.[asset.SYMBOL] ? (
+                  <img
+                    src={assetIcons[asset.SYMBOL]}
+                    alt=""
+                    aria-hidden="true"
+                    className="easyleap-size-6 easyleap-shrink-0 easyleap-rounded-full easyleap-object-cover"
+                  />
+                ) : (
+                  <span aria-hidden="true" className="easyleap-size-2.5 easyleap-rounded-full" style={{ backgroundColor: dot }} />
+                )}
                 {asset.SYMBOL}
               </button>
             );

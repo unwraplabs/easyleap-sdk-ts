@@ -129,6 +129,9 @@ export const KNOWN_WALLETS: KnownWallet[] = [
 /** Shown first in the dialog; the rest go under "More wallets" */
 export const PRIMARY_WALLET_IDS = ["argentX", "braavos", "xverse", "bramble"];
 
+/** Kept under "More wallets" even when installed, unless last used (mostly used for other chains) */
+export const SECONDARY_WALLET_IDS = ["keplr", "okxwallet"];
+
 export function detectDevice(userAgent: string): DeviceEnv {
   const ua = userAgent.toLowerCase();
   const os: DeviceOs = /iphone|ipad|ipod/.test(ua)
